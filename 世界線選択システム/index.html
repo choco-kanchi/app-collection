@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>世界線選択システム</title>
+
+<style>
+body {
+  margin: 0;
+  height: 100vh;
+  background: radial-gradient(circle at center, #000010, #000000 80%);
+  color: #e0e0ff;
+  font-family: "Hiragino Mincho ProN", serif;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+}
+
+/* 背景のオーラ */
+body::before {
+  content: "";
+  position: absolute;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(100,100,255,0.2), transparent 70%);
+  animation: aura 6s infinite linear;
+}
+
+@keyframes aura {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.container {
+  position: relative;
+  text-align: center;
+  z-index: 1;
+  padding: 40px;
+  border: 1px solid rgba(255,255,255,0.2);
+  background: rgba(0,0,20,0.6);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 0 40px rgba(0,0,255,0.3);
+}
+
+/* タイトル */
+h1 {
+  font-size: 32px;
+  letter-spacing: 3px;
+  text-shadow: 0 0 15px #8888ff, 0 0 30px #4444ff;
+}
+
+/* 入力欄 */
+input {
+  padding: 10px;
+  margin: 10px;
+  width: 140px;
+  background: black;
+  border: 1px solid #6666ff;
+  color: #aaaaff;
+}
+
+/* ボタン */
+button {
+  margin-top: 20px;
+  padding: 15px 40px;
+  font-size: 16px;
+  border: 1px solid #8888ff;
+  background: linear-gradient(145deg, #111133, #000022);
+  color: #ccccff;
+  cursor: pointer;
+  transition: 0.3s;
+  letter-spacing: 2px;
+}
+
+button:hover {
+  box-shadow: 0 0 20px #6666ff;
+}
+
+button:active {
+  transform: scale(0.95);
+}
+
+/* 結果表示 */
+#result {
+  margin-top: 40px;
+  font-size: 22px;
+  min-height: 50px;
+  white-space: pre-line;
+  text-shadow: 0 0 10px #6666ff;
+}
+
+/* 点滅 */
+.blink {
+  animation: blink 0.8s infinite;
+}
+
+@keyframes blink {
+  0%,100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+  <h1>— 世界線選択システム —</h1>
+
+  <input id="option1" placeholder="選択肢A">
+  <input id="option2" placeholder="選択肢B"><br>
+
+  <button onclick="startRoulette()">▶ 運命を決める</button>
+
+  <div id="result"></div>
+</div>
+
+<script>
+function startRoulette() {
+  const o1 = document.getElementById("option1").value;
+  const o2 = document.getElementById("option2").value;
+  const result = document.getElementById("result");
+
+  if (!o1 || !o2) {
+    alert("選択肢が不足しています");
+    return;
+  }
+
+  let messages = [
+    "運命を読み込み中...",
+    "分岐先を探索しています...",
+    "……どちらの世界線も存在する"
+  ];
+
+  let i = 0;
+
+  result.classList.add("blink");
+
+  const phase1 = setInterval(() => {
+    result.textContent = messages[i];
+    i++;
+
+    if (i >= messages.length) {
+      clearInterval(phase1);
+
+      let count = 0;
+
+      const spin = setInterval(() => {
+        result.textContent = Math.random() < 0.5 ? o1 : o2;
+        count++;
+
+        if (count > 15) {
+          clearInterval(spin);
+
+          result.classList.remove("blink");
+
+          const final = Math.random() < 0.5 ? o1 : o2;
+
+          result.textContent =
+            "▶ 確定\nこの世界線では「" + final + "」が選ばれた。";
+        }
+      }, 80);
+    }
+  }, 600);
+}
+</script>
+
+</body>
+</html>

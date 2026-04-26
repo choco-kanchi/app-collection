@@ -1,0 +1,1424 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>魔界の門番試験</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700;900&family=Noto+Serif+JP:wght@400;700&family=MedievalSharp&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --crimson: #880000;
+    --crimson-bright: #cc0000;
+    --crimson-glow: #ff2200;
+    --deep-purple: #1a0028;
+    --mid-purple: #2d0050;
+    --dark-purple: #0d0015;
+    --gold: #c8960c;
+    --gold-bright: #ffcc00;
+    --ash: #aaaaaa;
+    --fog: rgba(136,0,0,0.08);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html, body {
+    width: 100%; height: 100%;
+    overflow: hidden;
+    background: var(--dark-purple);
+    font-family: 'Noto Serif JP', serif;
+    color: #ddd;
+    cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20'%3E%3Ccircle cx='10' cy='10' r='4' fill='%23880000'/%3E%3Ccircle cx='10' cy='10' r='8' fill='none' stroke='%23cc0000' stroke-width='1.5'/%3E%3C/svg%3E") 10 10, auto;
+  }
+
+  /* === BACKGROUND LAYERS === */
+  #bg {
+    position: fixed; inset: 0; z-index: 0;
+    background: radial-gradient(ellipse at 50% 60%, #1a0028 0%, #0a0010 60%, #000 100%);
+  }
+
+  .ember {
+    position: fixed; bottom: -20px;
+    width: 4px; height: 4px;
+    border-radius: 50%;
+    background: var(--crimson-glow);
+    box-shadow: 0 0 8px 3px var(--crimson);
+    animation: ember-rise linear infinite;
+    pointer-events: none; z-index: 1;
+  }
+
+  @keyframes ember-rise {
+    0%   { transform: translateX(0) translateY(0) scale(1); opacity: 1; }
+    50%  { transform: translateX(var(--drift)) translateY(-50vh) scale(0.7); opacity: 0.7; }
+    100% { transform: translateX(calc(var(--drift)*1.5)) translateY(-110vh) scale(0.2); opacity: 0; }
+  }
+
+  .sigil {
+    position: fixed; pointer-events: none; z-index: 1;
+    opacity: 0.04;
+    animation: sigil-rotate 40s linear infinite;
+  }
+  .sigil svg { width: 100%; height: 100%; }
+  @keyframes sigil-rotate { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+  #crack-overlay {
+    position: fixed; inset: 0; z-index: 2;
+    pointer-events: none;
+    background:
+      repeating-linear-gradient(47deg, transparent 0%, transparent 49.8%, rgba(136,0,0,0.06) 50%, transparent 50.2%),
+      repeating-linear-gradient(-30deg, transparent 0%, transparent 49.5%, rgba(80,0,80,0.05) 50%, transparent 50.5%);
+  }
+
+  /* === MAIN WRAPPER === */
+  #app {
+    position: relative; z-index: 10;
+    width: 100%; height: 100vh;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    padding: 20px;
+  }
+
+  /* === SCREENS === */
+  .screen {
+    display: none; flex-direction: column; align-items: center;
+    width: 100%; max-width: 600px;
+    animation: screen-in 0.6s cubic-bezier(.23,1,.32,1) both;
+  }
+  .screen.active { display: flex; }
+  @keyframes screen-in {
+    from { opacity: 0; transform: translateY(30px) scale(0.96); }
+    to   { opacity: 1; transform: none; }
+  }
+
+  /* === TITLE SCREEN === */
+  #title-flame-wrap {
+    position: relative; margin-bottom: 8px;
+  }
+
+  .gate-art {
+    font-size: clamp(60px, 15vw, 110px);
+    line-height: 1;
+    filter: drop-shadow(0 0 30px #880000) drop-shadow(0 0 60px #440000);
+    animation: gate-pulse 3s ease-in-out infinite alternate;
+    user-select: none;
+  }
+  @keyframes gate-pulse {
+    from { filter: drop-shadow(0 0 20px #880000) drop-shadow(0 0 40px #220000); transform: scale(1); }
+    to   { filter: drop-shadow(0 0 50px #cc0000) drop-shadow(0 0 90px #880000); transform: scale(1.03); }
+  }
+
+  .main-title {
+    font-family: 'Cinzel Decorative', cursive;
+    font-size: clamp(20px, 6vw, 42px);
+    font-weight: 900;
+    color: var(--gold-bright);
+    text-shadow: 0 0 20px var(--gold), 0 0 40px rgba(200,150,0,0.5), 2px 2px 0 #440000;
+    letter-spacing: 0.05em;
+    text-align: center;
+    line-height: 1.2;
+    margin-bottom: 6px;
+  }
+
+  .sub-title {
+    font-size: clamp(11px, 3vw, 15px);
+    color: #cc4444;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    margin-bottom: 28px;
+    text-shadow: 0 0 10px #880000;
+    animation: flicker 4s step-end infinite;
+  }
+  @keyframes flicker {
+    0%,90%,92%,94%,100% { opacity: 1; }
+    91%,93% { opacity: 0.3; }
+  }
+
+  .lore-box {
+    background: linear-gradient(135deg, rgba(136,0,0,0.15), rgba(45,0,80,0.25));
+    border: 1px solid rgba(136,0,0,0.5);
+    border-radius: 4px;
+    padding: 16px 20px;
+    margin-bottom: 28px;
+    font-size: clamp(11px, 2.5vw, 13px);
+    line-height: 1.9;
+    color: #bbb;
+    text-align: center;
+    box-shadow: inset 0 0 30px rgba(136,0,0,0.1), 0 0 20px rgba(136,0,0,0.2);
+    position: relative;
+  }
+  .lore-box::before {
+    content: '⸻ 魔界より伝わりし試練 ⸻';
+    display: block; font-size: 10px; color: var(--gold);
+    letter-spacing: 0.2em; margin-bottom: 10px; opacity: 0.8;
+  }
+
+  /* === BUTTONS === */
+  .btn-primary {
+    position: relative;
+    background: linear-gradient(135deg, #660000 0%, #990000 50%, #660000 100%);
+    border: 2px solid #cc0000;
+    color: #ffdddd;
+    font-family: 'Cinzel Decorative', cursive;
+    font-size: clamp(13px, 3.5vw, 16px);
+    font-weight: 700;
+    padding: 14px 40px;
+    border-radius: 3px;
+    cursor: pointer;
+    letter-spacing: 0.1em;
+    box-shadow: 0 0 20px rgba(136,0,0,0.6), 0 4px 15px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,100,100,0.2);
+    transition: all 0.15s;
+    overflow: hidden;
+    text-shadow: 0 0 10px rgba(255,100,100,0.8);
+  }
+  .btn-primary::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: linear-gradient(90deg, transparent, rgba(255,100,100,0.1), transparent);
+    transform: translateX(-100%);
+    transition: transform 0.4s;
+  }
+  .btn-primary:hover { transform: scale(1.04); box-shadow: 0 0 35px rgba(204,0,0,0.8), 0 6px 20px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,150,150,0.3); }
+  .btn-primary:hover::before { transform: translateX(100%); }
+  .btn-primary:active { transform: scale(0.97); }
+
+  /* === HUD === */
+  #hud {
+    width: 100%; max-width: 600px;
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 10px 16px;
+    background: linear-gradient(90deg, rgba(136,0,0,0.2), rgba(45,0,80,0.2), rgba(136,0,0,0.2));
+    border: 1px solid rgba(136,0,0,0.3);
+    border-radius: 4px;
+    margin-bottom: 16px;
+    position: relative; z-index: 20;
+  }
+  .hud-item { text-align: center; }
+  .hud-label { font-size: 9px; letter-spacing: 0.2em; color: #884444; text-transform: uppercase; }
+  .hud-val {
+    font-family: 'Cinzel Decorative', cursive;
+    font-size: clamp(18px, 5vw, 26px);
+    color: #ffcc00;
+    text-shadow: 0 0 12px rgba(255,200,0,0.6);
+    transition: transform 0.15s;
+  }
+  .hud-val.pop { animation: pop 0.2s ease; }
+  @keyframes pop { 0%,100%{transform:scale(1)} 50%{transform:scale(1.3)} }
+
+  #timer-bar-wrap {
+    width: 100%; max-width: 600px;
+    height: 6px; background: rgba(255,255,255,0.05);
+    border-radius: 3px; margin-bottom: 18px;
+    overflow: hidden; position: relative; z-index: 20;
+  }
+  #timer-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #880000, #cc0000, #ff6600);
+    box-shadow: 0 0 8px #cc0000;
+    transition: width 0.1s linear, background 0.5s;
+    width: 100%;
+  }
+
+  /* === RULE DISPLAY === */
+  #rule-display {
+    width: 100%; max-width: 600px;
+    padding: 10px 16px;
+    border-radius: 4px;
+    margin-bottom: 16px;
+    font-size: clamp(12px, 3vw, 14px);
+    text-align: center;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    transition: all 0.3s;
+    position: relative; z-index: 20;
+    border: 1px solid transparent;
+  }
+  #rule-display.rule-press {
+    background: rgba(0,60,0,0.4);
+    border-color: rgba(0,200,0,0.4);
+    color: #88ff88;
+    text-shadow: 0 0 10px rgba(0,255,0,0.5);
+    box-shadow: 0 0 15px rgba(0,150,0,0.3);
+  }
+  #rule-display.rule-avoid {
+    background: rgba(80,0,0,0.4);
+    border-color: rgba(255,0,0,0.4);
+    color: #ff8888;
+    text-shadow: 0 0 10px rgba(255,0,0,0.5);
+    box-shadow: 0 0 15px rgba(200,0,0,0.3);
+  }
+  #rule-display.rule-change {
+    animation: rule-flash 0.5s ease;
+  }
+  @keyframes rule-flash {
+    0%,100%{transform:scale(1)} 30%{transform:scale(1.08)} 60%{transform:scale(0.95)}
+  }
+
+  /* === GAME ARENA === */
+  #arena {
+    position: relative;
+    width: 100%; max-width: 600px;
+    height: clamp(280px, 45vw, 360px);
+    border: 1px solid rgba(136,0,0,0.4);
+    border-radius: 6px;
+    background: radial-gradient(ellipse at 50% 50%, rgba(26,0,40,0.95), rgba(5,0,10,0.98));
+    overflow: hidden;
+    box-shadow: 0 0 40px rgba(136,0,0,0.3), inset 0 0 60px rgba(0,0,0,0.5);
+  }
+  #arena::before {
+    content: ''; position: absolute; inset: 0;
+    background: repeating-linear-gradient(0deg, transparent, transparent 29px, rgba(136,0,0,0.04) 30px),
+                repeating-linear-gradient(90deg, transparent, transparent 29px, rgba(136,0,0,0.04) 30px);
+    pointer-events: none;
+  }
+
+  /* === GAME BUTTONS === */
+  .game-btn {
+    position: absolute;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 6px;
+    font-family: 'Noto Serif JP', serif;
+    font-size: clamp(11px, 2.5vw, 14px);
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform 0.1s, box-shadow 0.1s;
+    z-index: 5;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    line-height: 1.2;
+    text-align: center;
+    padding: 6px 8px;
+    min-width: 70px; min-height: 44px;
+  }
+
+  .game-btn.type-normal {
+    background: linear-gradient(135deg, #003300, #006600);
+    border: 2px solid #00aa00;
+    color: #aaffaa;
+    box-shadow: 0 0 15px rgba(0,170,0,0.4);
+    text-shadow: 0 0 8px rgba(0,255,0,0.6);
+  }
+  .game-btn.type-normal:hover {
+    transform: scale(1.08);
+    box-shadow: 0 0 25px rgba(0,200,0,0.6);
+  }
+
+  .game-btn.type-fake {
+    background: linear-gradient(135deg, #330000, #660000);
+    border: 2px solid #aa0000;
+    color: #ffaaaa;
+    box-shadow: 0 0 15px rgba(170,0,0,0.4);
+    text-shadow: 0 0 8px rgba(255,0,0,0.5);
+  }
+  .game-btn.type-fake:hover {
+    transform: scale(1.05);
+    box-shadow: 0 0 25px rgba(200,0,0,0.6);
+  }
+
+  .game-btn.type-escape {
+    background: linear-gradient(135deg, #0a0030, #200060);
+    border: 2px solid #6600cc;
+    color: #ddaaff;
+    box-shadow: 0 0 15px rgba(100,0,200,0.4);
+    text-shadow: 0 0 8px rgba(150,0,255,0.6);
+    transition: left 0.45s cubic-bezier(.34,1.56,.64,1), top 0.45s cubic-bezier(.34,1.56,.64,1), box-shadow 0.1s;
+  }
+
+  .game-btn.hit-anim { animation: btn-hit 0.3s ease; }
+  .game-btn.wrong-anim { animation: btn-wrong 0.4s ease; }
+  @keyframes btn-hit {
+    0%{transform:scale(1)} 30%{transform:scale(0.85)} 60%{transform:scale(1.15)} 100%{transform:scale(1)}
+  }
+  @keyframes btn-wrong {
+    0%,100%{transform:translateX(0)} 20%,60%{transform:translateX(-6px)} 40%,80%{transform:translateX(6px)}
+  }
+
+  /* === FLASH OVERLAY === */
+  #flash {
+    position: fixed; inset: 0; z-index: 999;
+    pointer-events: none; opacity: 0;
+    transition: opacity 0.1s;
+  }
+  #flash.good { background: rgba(0,200,0,0.25); }
+  #flash.bad  { background: rgba(200,0,0,0.4); }
+  #flash.show { opacity: 1; }
+
+  /* === RESULT SCREEN === */
+  .result-gate {
+    font-size: clamp(50px, 12vw, 80px);
+    animation: gate-pulse 2s ease-in-out infinite alternate;
+    margin-bottom: 8px;
+  }
+
+  .result-title {
+    font-family: 'Cinzel Decorative', cursive;
+    font-size: clamp(11px, 3vw, 14px);
+    color: var(--gold);
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+    opacity: 0.8;
+  }
+
+  .verdict-box {
+    background: linear-gradient(135deg, rgba(80,0,0,0.3), rgba(45,0,80,0.4));
+    border: 1px solid rgba(136,0,0,0.6);
+    border-radius: 6px;
+    padding: 20px 24px;
+    margin-bottom: 20px;
+    width: 100%;
+    box-shadow: 0 0 30px rgba(136,0,0,0.25), inset 0 0 20px rgba(0,0,0,0.3);
+  }
+
+  .verdict-title {
+    font-family: 'Cinzel Decorative', cursive;
+    font-size: clamp(16px, 5vw, 24px);
+    color: var(--gold-bright);
+    text-shadow: 0 0 15px rgba(255,200,0,0.6);
+    margin-bottom: 10px;
+    text-align: center;
+    line-height: 1.3;
+  }
+
+  .verdict-comment {
+    font-size: clamp(12px, 3vw, 14px);
+    color: #cc8888;
+    line-height: 1.8;
+    text-align: center;
+    font-style: italic;
+  }
+
+  .stats-row {
+    display: flex; gap: 12px;
+    width: 100%; margin-bottom: 20px;
+    flex-wrap: wrap; justify-content: center;
+  }
+  .stat-card {
+    flex: 1; min-width: 80px;
+    background: rgba(136,0,0,0.1);
+    border: 1px solid rgba(136,0,0,0.3);
+    border-radius: 4px;
+    padding: 10px 8px;
+    text-align: center;
+  }
+  .stat-card .s-label { font-size: 9px; letter-spacing: 0.2em; color: #884444; text-transform: uppercase; }
+  .stat-card .s-val {
+    font-family: 'Cinzel Decorative', cursive;
+    font-size: clamp(18px, 5vw, 24px);
+    color: #ffcc00;
+    text-shadow: 0 0 10px rgba(255,200,0,0.4);
+  }
+
+  .btn-share {
+    background: linear-gradient(135deg, #1a0028, #2d0050);
+    border: 1px solid #6600cc;
+    color: #ddaaff;
+    font-family: 'Noto Serif JP', serif;
+    font-size: clamp(12px, 3vw, 14px);
+    padding: 12px 28px;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-top: 8px;
+    transition: all 0.2s;
+    letter-spacing: 0.05em;
+    box-shadow: 0 0 15px rgba(100,0,200,0.3);
+    width: 100%;
+  }
+  .btn-share:hover { background: linear-gradient(135deg, #2d0050, #440080); box-shadow: 0 0 25px rgba(150,0,255,0.5); }
+
+  .btn-retry {
+    background: transparent;
+    border: 1px solid rgba(136,0,0,0.5);
+    color: #aa4444;
+    font-family: 'Noto Serif JP', serif;
+    font-size: clamp(11px, 2.5vw, 13px);
+    padding: 10px 24px;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-top: 8px;
+    transition: all 0.2s;
+    letter-spacing: 0.1em;
+    width: 100%;
+  }
+  .btn-retry:hover { border-color: var(--crimson); color: #dd4444; background: rgba(136,0,0,0.1); }
+
+  /* === COPY TOAST === */
+  #toast {
+    position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
+    background: rgba(45,0,80,0.95);
+    border: 1px solid rgba(100,0,200,0.5);
+    color: #ddaaff;
+    padding: 10px 24px;
+    border-radius: 100px;
+    font-size: 13px;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s, transform 0.3s;
+    transform: translateX(-50%) translateY(10px);
+    z-index: 9999;
+  }
+  #toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  /* === MOBILE EXTRA === */
+  @media (max-width: 480px) {
+    #app { padding: 12px 10px; justify-content: flex-start; padding-top: 20px; }
+    .screen { max-width: 100%; }
+    #arena { height: clamp(240px, 55vw, 300px); }
+  }
+
+  /* === COUNTDOWN === */
+  #countdown-screen {
+    position: fixed; inset: 0; z-index: 500;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(0,0,0,0.85);
+    display: none;
+  }
+  #countdown-screen.active { display: flex; }
+  #countdown-num {
+    font-family: 'Cinzel Decorative', cursive;
+    font-size: clamp(80px, 25vw, 160px);
+    color: var(--gold-bright);
+    text-shadow: 0 0 40px var(--gold), 0 0 80px rgba(200,150,0,0.5);
+    animation: countdown-pop 0.8s ease;
+  }
+  @keyframes countdown-pop {
+    0%{transform:scale(2);opacity:0} 40%{transform:scale(0.9);opacity:1} 100%{transform:scale(1);opacity:1}
+  }
+
+  /* === AWAKENING MODE === */
+  #awakening-banner {
+    position: fixed; inset: 0; z-index: 300;
+    display: flex; align-items: center; justify-content: center;
+    pointer-events: none;
+    opacity: 0;
+  }
+  #awakening-banner.show {
+    animation: awaken-flash 1.8s ease forwards;
+  }
+  @keyframes awaken-flash {
+    0%   { opacity: 0; }
+    10%  { opacity: 1; }
+    60%  { opacity: 1; }
+    100% { opacity: 0; }
+  }
+  #awakening-text {
+    font-family: 'Cinzel Decorative', cursive;
+    font-size: clamp(28px, 8vw, 56px);
+    font-weight: 900;
+    color: #fff;
+    text-shadow:
+      0 0 20px #ff0000,
+      0 0 50px #ff0000,
+      0 0 100px #880000,
+      2px 2px 0 #440000;
+    letter-spacing: 0.1em;
+    text-align: center;
+    line-height: 1.2;
+    animation: awaken-text-pop 1.8s ease forwards;
+  }
+  @keyframes awaken-text-pop {
+    0%   { transform: scale(3) rotate(-3deg); opacity: 0; }
+    15%  { transform: scale(0.9) rotate(1deg); opacity: 1; }
+    30%  { transform: scale(1.05) rotate(0deg); }
+    80%  { transform: scale(1); opacity: 1; }
+    100% { transform: scale(0.8); opacity: 0; }
+  }
+
+  /* 覚醒中アリーナ */
+  #arena.awakened {
+    border-color: #ff2200 !important;
+    box-shadow: 0 0 60px rgba(255,34,0,0.7), 0 0 120px rgba(136,0,0,0.5), inset 0 0 40px rgba(255,0,0,0.15) !important;
+    animation: arena-quake 0.08s linear infinite;
+  }
+  @keyframes arena-quake {
+    0%   { transform: translate(0,0); }
+    25%  { transform: translate(-1px, 1px); }
+    50%  { transform: translate(1px, -1px); }
+    75%  { transform: translate(-1px, -1px); }
+    100% { transform: translate(1px, 1px); }
+  }
+
+  /* 覚醒中HUD */
+  #hud.awakened {
+    border-color: rgba(255,34,0,0.6) !important;
+    background: linear-gradient(90deg, rgba(200,0,0,0.25), rgba(100,0,20,0.3), rgba(200,0,0,0.25)) !important;
+    animation: hud-pulse 0.5s ease-in-out infinite alternate;
+  }
+  @keyframes hud-pulse {
+    from { box-shadow: 0 0 10px rgba(255,0,0,0.3); }
+    to   { box-shadow: 0 0 30px rgba(255,0,0,0.7); }
+  }
+
+  /* タイマーバー覚醒 */
+  #timer-bar.awakened {
+    background: linear-gradient(90deg, #ff0000, #ff6600, #ffcc00) !important;
+    box-shadow: 0 0 16px #ff2200 !important;
+    animation: bar-strobe 0.25s linear infinite;
+  }
+  @keyframes bar-strobe {
+    0%,100% { opacity: 1; } 50% { opacity: 0.7; }
+  }
+
+  /* rule-display覚醒 */
+  #rule-display.awakened {
+    animation: rule-awaken-pulse 0.4s ease-in-out infinite alternate !important;
+  }
+  @keyframes rule-awaken-pulse {
+    from { box-shadow: 0 0 8px rgba(255,0,0,0.4); }
+    to   { box-shadow: 0 0 25px rgba(255,0,0,0.9); }
+  }
+
+  /* 覚醒中ember加速 */
+  body.awakened .ember {
+    animation-duration: 1.5s !important;
+    background: #ff6600 !important;
+    box-shadow: 0 0 12px 4px #ff2200 !important;
+  }
+
+  /* Trap label badges */
+  .trap-badge {
+    position: absolute; top: -8px; right: -8px;
+    background: #880000;
+    color: #ffdddd;
+    font-size: 8px;
+    padding: 2px 5px;
+    border-radius: 3px;
+    letter-spacing: 0.05em;
+    animation: badge-pulse 1.5s ease-in-out infinite alternate;
+  }
+  @keyframes badge-pulse {
+    from{box-shadow:0 0 4px #880000} to{box-shadow:0 0 12px #ff0000}
+  }
+</style>
+</head>
+<body>
+
+<!-- Awakening Banner -->
+<div id="awakening-banner">
+  <div id="awakening-text">💀 覚醒 💀<br><span style="font-size:0.55em;letter-spacing:0.2em;">AWAKENING</span></div>
+</div>
+
+<!-- Background -->
+<div id="bg"></div>
+<div id="crack-overlay"></div>
+<div id="flash"></div>
+
+<!-- Countdown overlay -->
+<div id="countdown-screen">
+  <div id="countdown-num">3</div>
+</div>
+
+<!-- Toast -->
+<div id="toast">📜 呪文をコピーしました</div>
+
+<div id="app">
+
+  <!-- ===== TITLE SCREEN ===== -->
+  <div class="screen active" id="screen-title">
+    <div id="title-flame-wrap">
+      <div class="gate-art">🔥🚪🔥</div>
+    </div>
+    <div class="main-title">魔界の門番試験</div>
+    <div class="sub-title">Gates of Makai — Reflex Trial</div>
+
+    <div class="lore-box">
+      魔界への扉を守る「門番」に選ばれし者よ。<br>
+      汝は15秒間、真の標的のみを討ち、<br>
+      罠と偽りを見破らねばならない。<br>
+      判断を誤れば、汝の魂は奈落へと落ちる。<br><br>
+      <span style="color:#ffcc44;font-size:11px;">
+        🟢 緑ボタン＝討て　🔴 偽ボタン＝罠　🟣 彷徨うボタン＝捕えよ<br>
+        ⚠️ ルールは突然変わる。己の目を信じるな。
+      </span>
+    </div>
+
+    <button class="btn-primary" onclick="startCountdown()">
+      ⚔️ 試練を受ける
+    </button>
+    <div style="font-size:10px;color:#553333;margin-top:14px;letter-spacing:0.1em;">
+      ※ 覚悟のある者のみ扉を開け
+    </div>
+  </div>
+
+  <!-- ===== GAME SCREEN ===== -->
+  <div class="screen" id="screen-game">
+    <div id="hud">
+      <div class="hud-item">
+        <div class="hud-label">Score</div>
+        <div class="hud-val" id="hud-score">0</div>
+      </div>
+      <div class="hud-item">
+        <div class="hud-label">Combo</div>
+        <div class="hud-val" id="hud-combo">×0</div>
+      </div>
+      <div class="hud-item">
+        <div class="hud-label">Miss</div>
+        <div class="hud-val" id="hud-miss" style="color:#ff4444;text-shadow:0 0 10px rgba(255,0,0,0.5);">0</div>
+      </div>
+      <div class="hud-item">
+        <div class="hud-label">Time</div>
+        <div class="hud-val" id="hud-time">15</div>
+      </div>
+    </div>
+
+    <div id="timer-bar-wrap"><div id="timer-bar"></div></div>
+
+    <div id="rule-display" class="rule-press">
+      🟢 緑を押せ！偽物に触るな！
+    </div>
+
+    <div id="arena"></div>
+  </div>
+
+  <!-- ===== RESULT SCREEN ===== -->
+  <div class="screen" id="screen-result">
+    <div class="result-gate">⚰️</div>
+    <div class="result-title">審判の刻</div>
+
+    <div class="verdict-box">
+      <div class="verdict-title" id="verdict-title">称号</div>
+      <div class="verdict-comment" id="verdict-comment">コメント</div>
+    </div>
+
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="s-label">Score</div>
+        <div class="s-val" id="result-score">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="s-label">Hit</div>
+        <div class="s-val" id="result-hit">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="s-label">Miss</div>
+        <div class="s-val" id="result-miss">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="s-label">Avg ms</div>
+        <div class="s-val" id="result-avg">---</div>
+      </div>
+    </div>
+
+    <button class="btn-share" onclick="copyResult()">
+      📜 審判の記録を刻む（コピー）
+    </button>
+    <button class="btn-retry" onclick="resetGame()">
+      🔁 再び門に立つ
+    </button>
+  </div>
+
+</div>
+
+<script>
+// ==================== SOUND ENGINE (Web Audio API) ====================
+const AC = (() => {
+  try { return new (window.AudioContext || window.webkitAudioContext)(); } catch(e) { return null; }
+})();
+
+function resumeAC() {
+  if (AC && AC.state === 'suspended') AC.resume();
+}
+
+function playTone({ type='sine', freq=440, freq2=null, gain=0.3, duration=0.15, attack=0.005, decay=0.05, shape='exp' } = {}) {
+  if (!AC) return;
+  resumeAC();
+  const g = AC.createGain();
+  g.connect(AC.destination);
+  g.gain.setValueAtTime(gain, AC.currentTime);
+  g.gain.setValueAtTime(gain, AC.currentTime + attack);
+  if (shape === 'exp') g.gain.exponentialRampToValueAtTime(0.0001, AC.currentTime + duration);
+  else g.gain.linearRampToValueAtTime(0, AC.currentTime + duration);
+
+  const osc = AC.createOscillator();
+  osc.type = type;
+  osc.frequency.setValueAtTime(freq, AC.currentTime);
+  if (freq2 !== null) osc.frequency.exponentialRampToValueAtTime(freq2, AC.currentTime + duration);
+  osc.connect(g);
+  osc.start(AC.currentTime);
+  osc.stop(AC.currentTime + duration + 0.01);
+}
+
+function playNoise({ gain=0.2, duration=0.08, lowpass=800 } = {}) {
+  if (!AC) return;
+  resumeAC();
+  const buf = AC.createBuffer(1, AC.sampleRate * duration, AC.sampleRate);
+  const data = buf.getChannelData(0);
+  for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
+  const src = AC.createBufferSource();
+  src.buffer = buf;
+  const filter = AC.createBiquadFilter();
+  filter.type = 'lowpass'; filter.frequency.value = lowpass;
+  const g = AC.createGain();
+  g.gain.setValueAtTime(gain, AC.currentTime);
+  g.gain.exponentialRampToValueAtTime(0.0001, AC.currentTime + duration);
+  src.connect(filter); filter.connect(g); g.connect(AC.destination);
+  src.start(); src.stop(AC.currentTime + duration + 0.01);
+}
+
+const SFX = {
+  // ゲーム開始カウントダウンのビープ
+  countdown() {
+    playTone({ type:'square', freq:440, gain:0.15, duration:0.12, attack:0.005 });
+  },
+  countdownGo() {
+    playTone({ type:'sawtooth', freq:660, freq2:880, gain:0.2, duration:0.25, attack:0.005 });
+    setTimeout(() => playTone({ type:'sawtooth', freq:880, freq2:1100, gain:0.18, duration:0.2 }), 80);
+  },
+  // 正解ヒット
+  hit() {
+    playTone({ type:'sine', freq:660, freq2:880, gain:0.22, duration:0.12, attack:0.003 });
+    setTimeout(() => playTone({ type:'sine', freq:1100, gain:0.15, duration:0.08 }), 60);
+  },
+  // コンボ
+  combo() {
+    const base = 660 + state.combo * 40;
+    playTone({ type:'triangle', freq:base, freq2:base*1.5, gain:0.25, duration:0.15, attack:0.003 });
+  },
+  // 逃げるボタン捕捉
+  escapeCatch() {
+    playTone({ type:'sine', freq:880, freq2:1320, gain:0.28, duration:0.18, attack:0.003 });
+    setTimeout(() => playTone({ type:'sine', freq:1320, freq2:1760, gain:0.2, duration:0.15 }), 80);
+    setTimeout(() => playTone({ type:'sine', freq:1760, gain:0.15, duration:0.12 }), 160);
+  },
+  // ミス・罠踏み
+  miss() {
+    playTone({ type:'sawtooth', freq:220, freq2:110, gain:0.3, duration:0.25, attack:0.005 });
+    setTimeout(() => playNoise({ gain:0.15, duration:0.12, lowpass:400 }), 50);
+  },
+  // ルール変更
+  ruleChange() {
+    playTone({ type:'square', freq:330, freq2:165, gain:0.25, duration:0.18, attack:0.01 });
+    setTimeout(() => playTone({ type:'square', freq:165, freq2:110, gain:0.2, duration:0.2 }), 100);
+    setTimeout(() => playNoise({ gain:0.12, duration:0.15, lowpass:600 }), 80);
+  },
+  // タイムアップ
+  timeup() {
+    [0, 120, 240, 360].forEach((t, i) => {
+      setTimeout(() => playTone({ type:'sawtooth', freq:440 - i*60, gain:0.2 - i*0.02, duration:0.2, shape:'exp' }), t);
+    });
+    setTimeout(() => playNoise({ gain:0.2, duration:0.3, lowpass:300 }), 400);
+  },
+  // 結果画面登場
+  result() {
+    [0,100,200,320].forEach((t,i) => {
+      setTimeout(() => playTone({ type:'sine', freq:[220,330,440,550][i], gain:0.18, duration:0.25 }), t);
+    });
+  },
+  // 覚醒モード発動SE
+  awaken() {
+    // 低音から高音へ駆け上がる不吉な和音
+    playTone({ type:'sawtooth', freq:55, freq2:110, gain:0.3, duration:0.4, attack:0.01 });
+    setTimeout(() => playTone({ type:'sawtooth', freq:110, freq2:220, gain:0.28, duration:0.35 }), 150);
+    setTimeout(() => playTone({ type:'square', freq:220, freq2:440, gain:0.25, duration:0.3 }), 280);
+    setTimeout(() => playTone({ type:'sawtooth', freq:440, freq2:880, gain:0.3, duration:0.4 }), 400);
+    setTimeout(() => playNoise({ gain:0.25, duration:0.3, lowpass:1200 }), 400);
+    setTimeout(() => playTone({ type:'sine', freq:880, freq2:1320, gain:0.2, duration:0.5 }), 600);
+    // 最後にガツンとノイズ
+    setTimeout(() => playNoise({ gain:0.3, duration:0.2, lowpass:2000 }), 900);
+  },
+  // コピー完了
+  copy() {
+    playTone({ type:'sine', freq:880, freq2:1320, gain:0.18, duration:0.15, attack:0.003 });
+    setTimeout(() => playTone({ type:'sine', freq:1320, gain:0.12, duration:0.1 }), 100);
+  },
+  // ゲーム開始ボタン
+  start() {
+    playNoise({ gain:0.15, duration:0.1, lowpass:1200 });
+    playTone({ type:'sawtooth', freq:110, freq2:220, gain:0.2, duration:0.2, attack:0.01 });
+  },
+};
+
+// ==================== BACKGROUND EFFECTS ====================
+(function() {
+  // Embers
+  for (let i = 0; i < 18; i++) {
+    const e = document.createElement('div');
+    e.className = 'ember';
+    const x = Math.random() * 100;
+    const dur = 3 + Math.random() * 6;
+    const drift = (Math.random() - 0.5) * 80;
+    e.style.cssText = `left:${x}%;animation-duration:${dur}s;animation-delay:-${Math.random()*dur}s;--drift:${drift}px;opacity:${0.4+Math.random()*0.6}`;
+    document.body.appendChild(e);
+  }
+  // Sigils
+  const sigilSVG = `<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="#880000" stroke-width="1">
+    <circle cx="100" cy="100" r="90"/>
+    <polygon points="100,10 190,145 10,145" />
+    <polygon points="100,190 10,55 190,55" />
+    <circle cx="100" cy="100" r="20"/>
+  </svg>`;
+  [['-15vw','0','30vw','30vw'],['-5vw','40vh','20vw','20vw']].forEach(([l,t,w,h]) => {
+    const s = document.createElement('div');
+    s.className = 'sigil';
+    s.style.cssText = `left:${l};top:${t};width:${w};height:${h};animation-duration:${30+Math.random()*20}s`;
+    s.innerHTML = sigilSVG;
+    document.body.appendChild(s);
+  });
+})();
+
+// ==================== GAME STATE ====================
+let state = {
+  score: 0, miss: 0, combo: 0,
+  hits: 0,
+  escapeHits: 0,       // 逃げるボタン捕捉数
+  missAtRuleChange: 0, // ルール変更直後ミス数
+  lastRuleChangeTime: 0,
+  reactionTimes: [],
+  timeLeft: 15,
+  active: false,
+  awakened: false,     // 覚醒モード中か
+  ruleMode: 'normal',
+  currentColor: 'green',
+  timerInterval: null,
+  spawnInterval: null,
+  ruleInterval: null,
+  buttons: [],
+  lastSpawn: 0,
+};
+
+const GAME_DURATION = 15;
+
+// ==================== SCREENS ====================
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  const el = document.getElementById('screen-' + id);
+  el.classList.add('active');
+  // re-trigger animation
+  el.style.animation = 'none';
+  el.offsetHeight;
+  el.style.animation = '';
+}
+
+// ==================== COUNTDOWN ====================
+function startCountdown() {
+  const overlay = document.getElementById('countdown-screen');
+  const num = document.getElementById('countdown-num');
+  overlay.classList.add('active');
+  let count = 3;
+  num.textContent = count;
+
+  const tick = setInterval(() => {
+    count--;
+    if (count === 0) {
+      num.textContent = 'GO!';
+      num.style.color = '#00ff88';
+    } else if (count < 0) {
+      clearInterval(tick);
+      overlay.classList.remove('active');
+      num.style.color = '';
+      startGame();
+    } else {
+      num.textContent = count;
+    }
+    num.style.animation = 'none';
+    num.offsetHeight;
+    num.style.animation = 'countdown-pop 0.8s ease';
+  }, 900);
+}
+
+// ==================== START GAME ====================
+function startGame() {
+  state = {
+    score: 0, miss: 0, combo: 0, hits: 0,
+    reactionTimes: [],
+    timeLeft: GAME_DURATION,
+    active: true,
+    ruleMode: 'normal',
+    currentColor: 'green',
+    timerInterval: null, spawnInterval: null, ruleInterval: null,
+    buttons: [],
+    lastSpawn: 0,
+  };
+
+  showScreen('game');
+  updateHUD();
+  updateRuleDisplay();
+  document.getElementById('timer-bar').style.width = '100%';
+  document.getElementById('timer-bar').style.background = 'linear-gradient(90deg, #880000, #cc0000, #ff6600)';
+
+  // Timer
+  let elapsed = 0;
+  const startTime = Date.now();
+  state.timerInterval = setInterval(() => {
+    elapsed = (Date.now() - startTime) / 1000;
+    state.timeLeft = Math.max(0, GAME_DURATION - elapsed);
+    document.getElementById('hud-time').textContent = Math.ceil(state.timeLeft);
+    const pct = (state.timeLeft / GAME_DURATION) * 100;
+    document.getElementById('timer-bar').style.width = pct + '%';
+
+    // 覚醒モード発動（残り5秒）
+    if (state.timeLeft <= 5 && !state.awakened) {
+      triggerAwakening();
+    }
+
+    if (!state.awakened) {
+      if (pct < 30) {
+        document.getElementById('timer-bar').style.background = 'linear-gradient(90deg, #440000, #880000)';
+      }
+    }
+    if (state.timeLeft <= 0) endGame();
+  }, 50);
+
+  // Spawn buttons
+  spawnButton();
+  state.spawnInterval = setInterval(() => {
+    if (state.active) {
+      clearOldButtons();
+      spawnButton();
+      if (Math.random() < 0.35) spawnButton(); // sometimes 2 at once
+    }
+  }, 1200);
+
+  // Rule changes
+  state.ruleInterval = setInterval(() => {
+    if (!state.active) return;
+    triggerRuleChange();
+  }, 4500 + Math.random() * 2000);
+}
+
+// ==================== BUTTON SPAWNING ====================
+function spawnButton() {
+  if (!state.active) return;
+  const arena = document.getElementById('arena');
+  const W = arena.offsetWidth;
+  const H = arena.offsetHeight;
+  // 覚醒中はボタンを小さく・寿命短く
+  const bW = state.awakened ? 70 : 90;
+  const bH = state.awakened ? 40 : 50;
+  const lifespan = state.awakened ? 1800 : 2800;
+
+  // Determine type
+  const roll = Math.random();
+  let type, label;
+  if (roll < 0.45) {
+    type = 'normal';
+  } else if (roll < 0.75) {
+    type = 'fake';
+  } else {
+    type = 'escape';
+  }
+
+  // Labels by type
+  const normalLabels = ['討て！', '開門！', '解放！', 'Hit!', '✔'];
+  const fakeLabels = ['押すな', '罠じゃ', '偽物', '⚠️危険', 'Fake'];
+  const escapeLabels = ['捕えよ', '逃げる', '捕まえて', '👻', '逃亡中'];
+
+  if (type === 'normal') label = normalLabels[Math.floor(Math.random() * normalLabels.length)];
+  else if (type === 'fake') label = fakeLabels[Math.floor(Math.random() * fakeLabels.length)];
+  else label = escapeLabels[Math.floor(Math.random() * escapeLabels.length)];
+
+  const x = Math.random() * (W - bW - 10) + 5;
+  const y = Math.random() * (H - bH - 10) + 5;
+
+  const btn = document.createElement('button');
+  btn.className = `game-btn type-${type}`;
+  btn.style.left = x + 'px';
+  btn.style.top = y + 'px';
+  btn.style.width = bW + 'px';
+  btn.style.height = bH + 'px';
+  btn.dataset.type = type;
+  btn.dataset.spawnTime = Date.now();
+
+  btn.innerHTML = label;
+
+  // Escape button behavior — 常時自律徘徊
+  if (type === 'escape') {
+    const wanderSpeed = () => state.awakened ? 300 + Math.random() * 200 : 700 + Math.random() * 400;
+    const doWander = () => {
+      if (!state.active || !btn.parentNode) { clearInterval(btn._wanderInterval); return; }
+      const arena = document.getElementById('arena');
+      const W = arena.offsetWidth, H = arena.offsetHeight;
+      const bW = parseInt(btn.style.width), bH = parseInt(btn.style.height);
+      btn.style.left = (Math.random() * (W - bW - 10) + 5) + 'px';
+      btn.style.top  = (Math.random() * (H - bH - 10) + 5) + 'px';
+      // 覚醒中は間隔を再設定して加速
+      clearInterval(btn._wanderInterval);
+      btn._wanderInterval = setInterval(doWander, wanderSpeed());
+    };
+    btn._wanderInterval = setInterval(doWander, wanderSpeed());
+    // カーソルが近づいたら即逃げ
+    btn.addEventListener('mousemove', () => {
+      if (!state.active || !btn.parentNode) return;
+      const arena = document.getElementById('arena');
+      const W = arena.offsetWidth, H = arena.offsetHeight;
+      const bW = parseInt(btn.style.width), bH = parseInt(btn.style.height);
+      btn.style.left = (Math.random() * (W - bW - 10) + 5) + 'px';
+      btn.style.top  = (Math.random() * (H - bH - 10) + 5) + 'px';
+    }, { passive: true });
+  }
+
+  btn.addEventListener('click', (e) => { e.stopPropagation(); handleBtnClick(btn, type); });
+  btn.addEventListener('touchend', (e) => { e.preventDefault(); e.stopPropagation(); handleBtnClick(btn, type); });
+
+  arena.appendChild(btn);
+  state.buttons.push(btn);
+
+  // Auto-remove
+  setTimeout(() => {
+    if (btn._wanderInterval) clearInterval(btn._wanderInterval);
+    if (btn.parentNode) btn.remove();
+    state.buttons = state.buttons.filter(b => b !== btn);
+  }, lifespan);
+}
+
+function clearOldButtons() {
+  const now = Date.now();
+  state.buttons = state.buttons.filter(b => {
+    if (now - parseInt(b.dataset.spawnTime) > 3000) {
+      if (b._wanderInterval) clearInterval(b._wanderInterval);
+      b.remove(); return false;
+    }
+    return true;
+  });
+}
+
+// ==================== CLICK HANDLER ====================
+function handleBtnClick(btn, type) {
+  if (!state.active) return;
+  const rt = Date.now() - parseInt(btn.dataset.spawnTime);
+
+  // Determine if action is correct based on rule
+  let correct = false;
+
+  if (state.ruleMode === 'normal') {
+    // Normal: normal=good, fake=bad, escape=good(bonus)
+    if (type === 'normal') correct = true;
+    else if (type === 'escape') correct = true;
+    else correct = false; // fake = trap
+  } else {
+    // Inverted: now fake=good, normal=bad
+    if (type === 'fake') correct = true;
+    else if (type === 'escape') correct = true;
+    else correct = false;
+  }
+
+  btn.remove();
+  state.buttons = state.buttons.filter(b => b !== btn);
+
+  if (correct) {
+    state.reactionTimes.push(rt);
+    state.hits++;
+    state.combo++;
+    if (type === 'escape') state.escapeHits++;
+    // 覚醒中は得点1.5倍
+    const multiplier = state.awakened ? 1.5 : 1;
+    const pts = Math.round((type === 'escape' ? 150 : 100) * Math.max(1, state.combo) * multiplier);
+    state.score += pts;
+    flashScreen('good');
+    updateHUD(true);
+    showFloatingScore('+' + pts + (state.awakened ? '🔥' : ''), true);
+    if (type === 'escape') SFX.escapeCatch(); else if (state.combo >= 3) SFX.combo(); else SFX.hit();
+  } else {
+    // ルール変更直後（2秒以内）のミスを記録
+    if (Date.now() - state.lastRuleChangeTime < 2000) state.missAtRuleChange++;
+    state.miss++;
+    state.combo = 0;
+    state.score = Math.max(0, state.score - 80);
+    flashScreen('bad');
+    updateHUD(false);
+    showFloatingScore('-80', false);
+    SFX.miss();
+    // Shake arena
+    const arena = document.getElementById('arena');
+    arena.style.animation = 'none';
+    arena.style.transform = 'translateX(-5px)';
+    setTimeout(() => { arena.style.transform = 'translateX(5px)'; }, 60);
+    setTimeout(() => { arena.style.transform = state.awakened ? '' : ''; }, 120);
+  }
+}
+
+// ==================== AWAKENING MODE ====================
+function triggerAwakening() {
+  state.awakened = true;
+
+  // SEを鳴らす
+  SFX.awaken();
+
+  // バナー表示
+  const banner = document.getElementById('awakening-banner');
+  banner.classList.remove('show');
+  banner.offsetHeight;
+  banner.classList.add('show');
+
+  // アリーナ・HUD・バー・body・ruleに覚醒クラス
+  document.getElementById('arena').classList.add('awakened');
+  document.getElementById('hud').classList.add('awakened');
+  document.getElementById('timer-bar').classList.add('awakened');
+  document.getElementById('rule-display').classList.add('awakened');
+  document.body.classList.add('awakened');
+
+  // スポーン間隔を速く
+  clearInterval(state.spawnInterval);
+  state.spawnInterval = setInterval(() => {
+    if (!state.active) return;
+    clearOldButtons();
+    spawnButton();
+    spawnButton(); // 必ず2個同時
+    if (Math.random() < 0.5) spawnButton(); // 時々3個
+  }, 650);
+
+  // ルール変更を頻発
+  clearInterval(state.ruleInterval);
+  state.ruleInterval = setInterval(() => {
+    if (!state.active) return;
+    triggerRuleChange();
+  }, 1800 + Math.random() * 800);
+
+  // HUDのタイム文字を赤く
+  document.getElementById('hud-time').style.color = '#ff2200';
+  document.getElementById('hud-time').style.textShadow = '0 0 15px rgba(255,0,0,0.9)';
+  document.getElementById('hud-time').style.animation = 'pop 0.3s ease infinite alternate';
+}
+
+// ==================== RULE CHANGE ====================
+function triggerRuleChange() {
+  state.ruleMode = state.ruleMode === 'normal' ? 'inverted' : 'normal';
+  state.lastRuleChangeTime = Date.now();
+  updateRuleDisplay(true);
+  SFX.ruleChange();
+  // Big flash
+  const flash = document.getElementById('flash');
+  flash.className = 'bad show';
+  setTimeout(() => flash.classList.remove('show'), 300);
+}
+
+function updateRuleDisplay(animate = false) {
+  const el = document.getElementById('rule-display');
+  if (state.ruleMode === 'normal') {
+    el.className = 'rule-display rule-press' + (animate ? ' rule-change' : '');
+    el.textContent = '🟢 緑を討て！　偽ボタンは罠だ！';
+  } else {
+    el.className = 'rule-display rule-avoid' + (animate ? ' rule-change' : '');
+    el.textContent = '🔴 ルール変更！　今は偽物を押せ！緑は罠！';
+  }
+}
+
+// ==================== HUD ====================
+function updateHUD(good) {
+  const scoreEl = document.getElementById('hud-score');
+  const comboEl = document.getElementById('hud-combo');
+  const missEl = document.getElementById('hud-miss');
+
+  scoreEl.textContent = state.score;
+  comboEl.textContent = '×' + state.combo;
+  missEl.textContent = state.miss;
+
+  if (good === true) {
+    scoreEl.classList.remove('pop');
+    scoreEl.offsetHeight;
+    scoreEl.classList.add('pop');
+  } else if (good === false) {
+    missEl.classList.remove('pop');
+    missEl.offsetHeight;
+    missEl.classList.add('pop');
+  }
+}
+
+// ==================== FLASH ====================
+function flashScreen(type) {
+  const el = document.getElementById('flash');
+  el.className = type + ' show';
+  setTimeout(() => el.classList.remove('show'), 200);
+}
+
+// ==================== FLOATING SCORE ====================
+function showFloatingScore(text, good) {
+  const arena = document.getElementById('arena');
+  const el = document.createElement('div');
+  el.style.cssText = `
+    position:absolute;
+    left:${20+Math.random()*60}%;top:${20+Math.random()*50}%;
+    font-family:'Cinzel Decorative',cursive;
+    font-size:clamp(16px,4vw,22px);
+    color:${good ? '#88ff88' : '#ff4444'};
+    text-shadow:0 0 10px ${good ? 'rgba(0,255,0,0.6)' : 'rgba(255,0,0,0.6)'};
+    pointer-events:none;z-index:100;
+    animation:float-up 0.9s ease forwards;
+    font-weight:700;
+  `;
+  el.textContent = text;
+  const style = document.createElement('style');
+  style.textContent = `@keyframes float-up{0%{opacity:1;transform:translateY(0) scale(1)}100%{opacity:0;transform:translateY(-60px) scale(1.3)}}`;
+  document.head.appendChild(style);
+  arena.appendChild(el);
+  setTimeout(() => el.remove(), 900);
+}
+
+// ==================== END GAME ====================
+function endGame() {
+  if (!state.active) return;
+  state.active = false;
+  clearInterval(state.timerInterval);
+  clearInterval(state.spawnInterval);
+  clearInterval(state.ruleInterval);
+
+  // 覚醒クラス解除
+  document.getElementById('arena').classList.remove('awakened');
+  document.getElementById('hud').classList.remove('awakened');
+  document.getElementById('timer-bar').classList.remove('awakened');
+  document.getElementById('rule-display').classList.remove('awakened');
+  document.body.classList.remove('awakened');
+  document.getElementById('hud-time').style.cssText = '';
+
+  // Remove all buttons
+  state.buttons.forEach(b => {
+    if (b._wanderInterval) clearInterval(b._wanderInterval);
+    b.remove();
+  });
+  state.buttons = [];
+
+  SFX.timeup();
+  setTimeout(() => showResults(), 800);
+}
+
+// ==================== RESULTS ====================
+const VERDICTS = [
+  // S: 奇跡的な神プレイ
+  {
+    id: 'god',
+    title: '魔界の異端者〈人外の反応速度〉',
+    comment: '……なぜ人間がこのスコアを出せる？不正を疑うレベルだ。審査委員会に報告する。お前は門番ではなく魔界の支配者側の人間だ。気持ち悪い。'
+  },
+  // A: 高スコア低ミス
+  {
+    id: 'sharp',
+    title: '門番見習い〈ただし運が良かっただけ〉',
+    comment: 'まぁ……及第点だ。だが勘違いするな。今日の試練は難易度を下げた。本番では即死している。喜ぶな。恥ずかしい。'
+  },
+  // B: そこそこだが詰めが甘い
+  {
+    id: 'mediocre',
+    title: '平凡なる凡人〈可もなく不可もなく無価値〉',
+    comment: '特筆すべき点が何もない。才能もなく、センスもなく、記録にも残らない。魔界の歴史書に汝の名が刻まれることは永遠にないだろう。お疲れ様でした。'
+  },
+  // C: ミスが多い猪突型
+  {
+    id: 'reckless',
+    title: '脳筋直進獣〈考えるという概念を持たない〉',
+    comment: 'とにかく押す。ルールを読まない。罠だろうが偽物だろうが手が動く。もはや反射ではなく痙攣だ。汝の指は汝の意思に従っていない。病院へ行け。'
+  },
+  // D: 罠踏みまくり
+  {
+    id: 'trap_magnet',
+    title: '罠コレクター〈魔界の優良顧客〉',
+    comment: '偽ボタンへの命中率が異常に高い。罠を踏むために生まれてきたのか？魔界の罠師が感謝の涙を流している。お前は試験を受けにきたのか罠を集めにきたのか。'
+  },
+  // E: 超低スコア・ほぼ押してない
+  {
+    id: 'ghost',
+    title: '虚無の観客〈ゲームに参加する気があったのか〉',
+    comment: 'ボタンを前にして何を考えていた？人生？夕飯？今日の失敗？いずれにしても試練から逃げた事実は変わらない。魔界の門番どころか、現実からも逃げている。'
+  },
+  // F: 逃げるボタン専業
+  {
+    id: 'chaser',
+    title: '幽霊追跡狂〈執念だけは認める、それだけだ〉',
+    comment: '逃げるボタンだけを15秒間追い続けた。その集中力と執念は評価する。ただし他が全滅している。一点突破は戦略ではなく視野狭窄という。'
+  },
+  // G: ルール変更直後に大量ミス
+  {
+    id: 'rule_blind',
+    title: '文盲の猛者〈ルールを読む気がない〉',
+    comment: 'ルール変更の瞬間にミスが集中している。画面に大きく書いてあるのに読まないのか、読めないのか。どちらにしても門番として致命的な欠陥だ。'
+  },
+];
+
+function getVerdict() {
+  const { score, miss, hits, escapeHits, missAtRuleChange } = state;
+
+  // G: ルール変更直後ミスが3回以上
+  if (missAtRuleChange >= 3) return VERDICTS[7];
+  // F: 逃げるボタン専業（escape捕捉がhitsの60%以上かつhits5以上）
+  if (hits >= 5 && escapeHits / hits >= 0.6) return VERDICTS[6];
+  // S: 神プレイ
+  if (score >= 3500 && miss <= 1) return VERDICTS[0];
+  // A: 高スコア低ミス
+  if (score >= 2200 && miss <= 2) return VERDICTS[1];
+  // D: 罠踏みすぎ
+  if (miss >= 7) return VERDICTS[4];
+  // E: ほぼ押してない
+  if (hits <= 2 && score < 300) return VERDICTS[5];
+  // C: 猪突
+  if (miss >= 4 && score < 1200) return VERDICTS[3];
+  // B: 中くらい
+  if (score >= 1000) return VERDICTS[2];
+  // それ以外
+  return VERDICTS[3];
+}
+
+function showResults() {
+  const v = getVerdict();
+  const avgMs = state.reactionTimes.length > 0
+    ? Math.round(state.reactionTimes.reduce((a,b)=>a+b,0) / state.reactionTimes.length)
+    : 0;
+
+  document.getElementById('verdict-title').textContent = v.title;
+  document.getElementById('verdict-comment').textContent = v.comment;
+  document.getElementById('result-score').textContent = state.score;
+  document.getElementById('result-hit').textContent = state.hits;
+  document.getElementById('result-miss').textContent = state.miss;
+  document.getElementById('result-avg').textContent = avgMs > 0 ? avgMs : '---';
+
+  showScreen('result');
+}
+
+// ==================== SHARE / COPY ====================
+function copyResult() {
+  const v = getVerdict();
+  const avgMs = state.reactionTimes.length > 0
+    ? Math.round(state.reactionTimes.reduce((a,b)=>a+b,0) / state.reactionTimes.length)
+    : 0;
+
+  const text = `
+🔥【魔界の門番試験 — 審判の記録】🔥
+
+称号：「${v.title}」
+
+スコア：${state.score}点
+命中数：${state.hits}回
+失敗数：${state.miss}回
+平均反応速度：${avgMs > 0 ? avgMs + 'ms' : '測定不能'}
+
+審判の言葉：
+「${v.comment}」
+
+— 魔界の門番試験 —
+  `.trim();
+
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(() => showToast());
+  } else {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select(); document.execCommand('copy');
+    ta.remove();
+    showToast();
+  }
+}
+
+function showToast() {
+  const t = document.getElementById('toast');
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// ==================== RESET ====================
+function resetGame() {
+  const arena = document.getElementById('arena');
+  arena.innerHTML = '';
+  // 念のため覚醒クラスをリセット
+  arena.classList.remove('awakened');
+  document.getElementById('hud').classList.remove('awakened');
+  document.getElementById('timer-bar').classList.remove('awakened');
+  document.getElementById('rule-display').classList.remove('awakened');
+  document.body.classList.remove('awakened');
+  document.getElementById('awakening-banner').classList.remove('show');
+  showScreen('title');
+}
+</script>
+</body>
+</html>

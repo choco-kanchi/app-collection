@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>宇宙人拉致回避テスト</title>
+
+<style>
+body {
+  margin: 0;
+  background: #000;
+  color: #fff;
+  font-family: sans-serif;
+  overflow: hidden;
+  text-align: center;
+  height: 100vh;
+  position: relative;
+  touch-action: manipulation;
+}
+
+/* レベル選択 */
+#levelSelect {
+  position: absolute;
+  top: 5%;
+  width: 100%;
+  z-index: 5;
+}
+#levelSelect button {
+  margin: 4px;
+  padding: 6px 10px;
+}
+
+/* 選択状態 */
+#btn-easy.active { background: cyan; color: #000; }
+#btn-normal.active { background: yellow; color: #000; }
+#btn-hard.active { background: red; color: #fff; }
+
+/* UFO */
+#ufo {
+  position: absolute;
+  top: 10%;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 60px;
+  opacity: 0;
+  z-index: 2;
+}
+
+/* ビーム */
+#beam {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 140px;
+  height: 100vh;
+  display: none;
+  filter: blur(8px);
+  animation: beamGlow 0.5s infinite alternate;
+  z-index: 1;
+}
+
+@keyframes beamGlow {
+  from { opacity: 0.7; }
+  to { opacity: 1; }
+}
+
+/* プレイヤー */
+#player {
+  position: absolute;
+  bottom: 20%;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 50px;
+  z-index: 3;
+}
+
+/* 宇宙人 */
+#alien {
+  position: absolute;
+  bottom: 20%;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 50px;
+  display: none;
+  animation: laugh 0.5s infinite alternate;
+  z-index: 3;
+}
+
+@keyframes laugh {
+  from { transform: translateX(-50%) scale(1); }
+  to { transform: translateX(-50%) scale(1.25); }
+}
+
+/* エフェクト */
+.zoom {
+  animation: zoom 0.25s forwards;
+}
+@keyframes zoom {
+  from { transform: scale(1); }
+  to { transform: scale(1.2); }
+}
+
+.successFlash {
+  animation: successFlash 0.2s;
+}
+@keyframes successFlash {
+  50% { background: #002; }
+}
+
+.flash {
+  animation: flash 0.1s;
+}
+@keyframes flash {
+  50% { background: #0ff; }
+}
+
+/* テキスト */
+#result {
+  position: absolute;
+  top: 15%;
+  width: 100%;
+  font-size: 26px;
+  white-space: pre-line;
+  z-index: 4;
+}
+
+#taunt {
+  position: absolute;
+  bottom: 15%;
+  width: 100%;
+  font-size: 18px;
+  opacity: 0.85;
+  z-index: 4;
+}
+
+/* ボタン */
+#retryBtn {
+  position: absolute;
+  bottom: 5%;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 14px 28px;
+  font-size: 16px;
+  display: none;
+  z-index: 5;
+}
+</style>
+</head>
+
+<body>
+
+<div id="levelSelect">
+  <button id="btn-easy" onclick="setLevel('easy')">😊 やさしい</button>
+  <button id="btn-normal" onclick="setLevel('normal')">😐 ふつう</button>
+  <button id="btn-hard" onclick="setLevel('hard')">😈 むずかしい</button>
+</div>
+
+<div id="ufo">🛸</div>
+<div id="beam"></div>
+<div id="player">🧍</div>
+<div id="alien">👽</div>
+
+<div id="result">タップで開始</div>
+<div id="taunt"></div>
+<button id="retryBtn">再チャレンジ</button>
+
+<script>
+let startTime = null;
+let state = "idle";
+let beamTimeout;
+let level = "easy";
+
+const beam = document.getElementById("beam");
+const result = document.getElementById("result");
+const taunt = document.getElementById("taunt");
+const retryBtn = document.getElementById("retryBtn");
+const ufo = document.getElementById("ufo");
+const player = document.getElementById("player");
+const alien = document.getElementById("alien");
+
+/* レベル設定（🔥難しい強化） */
+const levelSettings = {
+  easy: {
+    delayMin: 1000,
+    delayMax: 3000,
+    reactionLimit: 700,
+    color: "rgba(0,255,255,1)"
+  },
+  normal: {
+    delayMin: 700,
+    delayMax: 1800,
+    reactionLimit: 450,
+    color: "rgba(255,255,0,1)"
+  },
+  hard: {
+    delayMin: 300,
+    delayMax: 800,
+    reactionLimit: 220,
+    color: "rgba(255,0,0,1)"
+  }
+};
+
+function setLevel(lv) {
+  level = lv;
+
+  document.querySelectorAll("#levelSelect button").forEach(btn => {
+    btn.classList.remove("active");
+  });
+
+  document.getElementById(`btn-${lv}`).classList.add("active");
+}
+
+/* 初期選択 */
+window.onload = () => {
+  setLevel("easy");
+};
+
+/* 煽り */
+const taunts = {
+  success: ["…今のは見逃しただけ", "運だけだね"],
+  normal: ["危なかったね", "ギリギリだったよ"],
+  fail: ["フフ…いただき", "抵抗、無意味だったね"],
+  flying: ["まだだよ？", "早すぎ"]
+};
+
+/* 開始 */
+function startGame() {
+  clearTimeout(beamTimeout);
+
+  const messages = ["・・・来るぞ", "まだだ…", "気を抜くな", "上を見ろ"];
+  result.innerText = messages[Math.floor(Math.random()*messages.length)];
+
+  taunt.innerText = "";
+  retryBtn.style.display = "none";
+
+  player.style.display = "block";
+  alien.style.display = "none";
+  ufo.style.opacity = 0;
+  beam.style.display = "none";
+
+  document.body.classList.remove("zoom","successFlash");
+
+  state = "waiting";
+
+  const s = levelSettings[level];
+  const delay = Math.random() * (s.delayMax - s.delayMin) + s.delayMin;
+
+  beamTimeout = setTimeout(showBeam, delay);
+}
+
+/* ビーム */
+function showBeam() {
+  const s = levelSettings[level];
+
+  beam.style.background = `linear-gradient(
+    to bottom,
+    rgba(0,0,0,0),
+    ${s.color},
+    ${s.color},
+    rgba(0,0,0,0)
+  )`;
+
+  ufo.style.opacity = 1;
+  beam.style.display = "block";
+  startTime = Date.now();
+  state = "active";
+
+  document.body.classList.add("flash");
+  setTimeout(()=>document.body.classList.remove("flash"),100);
+
+  setTimeout(() => {
+    if (state === "active") showResult(null);
+  }, s.reactionLimit);
+}
+
+/* タップ */
+function handleTap() {
+
+  if (state === "idle") {
+    startGame();
+    return;
+  }
+
+  if (state === "waiting") {
+    showTaunt("flying");
+    return;
+  }
+
+  if (state === "active") {
+    const reaction = Date.now() - startTime;
+
+    let type;
+    if (reaction < levelSettings[level].reactionLimit * 0.3) type = "success";
+    else if (reaction < levelSettings[level].reactionLimit) type = "normal";
+    else type = "fail";
+
+    showResult(reaction/1000, type);
+  }
+}
+
+document.body.addEventListener("pointerdown", handleTap);
+
+/* 結果 */
+function showResult(reaction, type="fail") {
+  clearTimeout(beamTimeout);
+  beam.style.display = "none";
+
+  let text;
+
+  if (!reaction) {
+    text = "👽 拉致されました";
+    player.style.display = "none";
+    alien.style.display = "block";
+    alien.innerText = "👽ｗ";
+    document.body.classList.add("zoom");
+  } else {
+    text = `${reaction.toFixed(3)}秒`;
+    document.body.classList.add("successFlash","zoom");
+  }
+
+  result.innerText = text;
+  showTaunt(type);
+
+  retryBtn.style.display = "block";
+  state = "result";
+}
+
+/* 再挑戦 */
+retryBtn.addEventListener("click", (e) => {
+  e.stopPropagation();
+  state = "idle";
+  startGame();
+});
+
+/* 煽り */
+function showTaunt(type) {
+  const list = taunts[type];
+  taunt.innerText = list[Math.floor(Math.random() * list.length)];
+}
+</script>
+
+</body>
+</html>
