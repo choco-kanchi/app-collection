@@ -1,0 +1,1470 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ほっこりポモドーロ</title>
+<link href="https://fonts.googleapis.com/css2?family=Zen+Old+Mincho:wght@400;700&family=DM+Serif+Display:ital@0;1&family=Nunito:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{width:100%;height:100%;overflow:hidden}
+
+/* ============================================================
+   CSS VARIABLES — changed per theme
+   ============================================================ */
+:root {
+  --bg1: #d4e8c2;
+  --bg2: #a8c98a;
+  --bg3: #7aab5c;
+  --accent: #4a8c3f;
+  --card: rgba(255,255,255,0.55);
+  --card-border: rgba(100,160,80,0.35);
+  --text: #2d4a1e;
+  --text2: #5a7a45;
+  --ring-track: rgba(100,160,80,0.2);
+  --ring-fill: #5fa84a;
+  --ring-glow: rgba(95,168,74,0.4);
+  --btn-bg: rgba(255,255,255,0.6);
+  --btn-active: #5fa84a;
+  --btn-text: #2d4a1e;
+  --shimmer: rgba(255,255,255,0.3);
+  --particle: #b8dfa0;
+  --font-display: "Zen Old Mincho", serif;
+  --font-body: "Nunito", sans-serif;
+}
+
+body.theme-night {
+  --bg1: #0b0f2a;
+  --bg2: #151c40;
+  --bg3: #1e2655;
+  --accent: #7c9cff;
+  --card: rgba(20,28,65,0.7);
+  --card-border: rgba(120,150,255,0.25);
+  --text: #dde4ff;
+  --text2: #8899cc;
+  --ring-track: rgba(80,100,200,0.2);
+  --ring-fill: #5b7ef0;
+  --ring-glow: rgba(91,126,240,0.5);
+  --btn-bg: rgba(30,40,100,0.6);
+  --btn-active: #5b7ef0;
+  --btn-text: #dde4ff;
+  --shimmer: rgba(150,170,255,0.15);
+  --particle: #6680dd;
+  --font-display: "DM Serif Display", serif;
+  --font-body: "Nunito", sans-serif;
+}
+
+body.theme-sun {
+  --bg1: #fff4cc;
+  --bg2: #ffd966;
+  --bg3: #ffb830;
+  --accent: #e67e00;
+  --card: rgba(255,255,255,0.72);
+  --card-border: rgba(230,140,0,0.3);
+  --text: #5a3300;
+  --text2: #9a6200;
+  --ring-track: rgba(230,140,0,0.2);
+  --ring-fill: #f0a000;
+  --ring-glow: rgba(240,160,0,0.5);
+  --btn-bg: rgba(255,255,255,0.65);
+  --btn-active: #f0a000;
+  --btn-text: #5a3300;
+  --shimmer: rgba(255,255,180,0.4);
+  --particle: #ffd060;
+  --font-display: "DM Serif Display", serif;
+  --font-body: "Nunito", sans-serif;
+}
+
+/* ============================================================
+   CANVAS / BG
+   ============================================================ */
+#bgCanvas {
+  position:fixed;inset:0;width:100%;height:100%;z-index:0;
+  transition: opacity 0.6s;
+}
+
+/* ============================================================
+   LAYOUT
+   ============================================================ */
+.app {
+  position:relative;z-index:1;
+  width:100%;height:100%;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:clamp(10px,2vh,20px);
+  padding:clamp(10px,3vw,30px);
+  font-family:var(--font-body);
+  color:var(--text);
+  transition: color 0.5s;
+}
+
+/* ============================================================
+   THEME SWITCHER
+   ============================================================ */
+.theme-bar {
+  position:fixed;top:clamp(10px,2vh,18px);right:clamp(10px,2vw,20px);
+  display:flex;gap:8px;z-index:10;
+}
+
+.theme-btn {
+  width:clamp(34px,4vw,42px);height:clamp(34px,4vw,42px);
+  border-radius:50%;border:2px solid rgba(255,255,255,0.5);
+  cursor:pointer;font-size:clamp(14px,2vw,18px);
+  display:flex;align-items:center;justify-content:center;
+  background:var(--btn-bg);
+  transition:all 0.25s;
+  box-shadow:0 2px 12px rgba(0,0,0,0.12);
+  backdrop-filter:blur(6px);
+}
+.theme-btn:hover{transform:scale(1.12);}
+.theme-btn.active{border-color:var(--accent);box-shadow:0 0 15px var(--ring-glow);}
+
+/* ============================================================
+   CARD
+   ============================================================ */
+.card {
+  background:var(--card);
+  border:1px solid var(--card-border);
+  border-radius:clamp(18px,3vw,28px);
+  padding:clamp(20px,4vw,40px) clamp(20px,5vw,50px);
+  text-align:center;
+  backdrop-filter:blur(14px);
+  box-shadow:0 8px 40px rgba(0,0,0,0.12), inset 0 1px 0 var(--shimmer);
+  width:min(96vw,480px);
+  transition: background 0.5s, border-color 0.5s, box-shadow 0.5s;
+}
+
+/* ============================================================
+   STATUS LABEL
+   ============================================================ */
+.status-label {
+  font-size:clamp(10px,1.5vw,12px);
+  letter-spacing:3px;
+  text-transform:uppercase;
+  color:var(--text2);
+  margin-bottom:6px;
+  transition:color 0.4s;
+}
+
+/* ============================================================
+   RING TIMER
+   ============================================================ */
+.ring-wrap {
+  position:relative;
+  width:clamp(160px,38vw,220px);
+  height:clamp(160px,38vw,220px);
+  margin:clamp(10px,2vh,20px) auto;
+}
+
+.ring-wrap svg {
+  position:absolute;inset:0;width:100%;height:100%;
+  transform:rotate(-90deg);
+}
+
+.ring-track { fill:none; stroke:var(--ring-track); }
+.ring-fill {
+  fill:none;
+  stroke:var(--ring-fill);
+  stroke-linecap:round;
+  transition:stroke-dashoffset 1s linear, stroke 0.5s;
+  filter:drop-shadow(0 0 8px var(--ring-glow));
+}
+
+.ring-center {
+  position:absolute;inset:0;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:2px;
+}
+
+.time-display {
+  font-family:var(--font-display);
+  font-size:clamp(32px,9vw,52px);
+  font-weight:700;
+  color:var(--text);
+  letter-spacing:2px;
+  transition: color 0.4s;
+}
+
+.session-type {
+  font-size:clamp(9px,1.5vw,11px);
+  letter-spacing:2px;
+  color:var(--text2);
+  text-transform:uppercase;
+}
+
+/* ============================================================
+   DURATION SELECTOR
+   ============================================================ */
+.duration-row {
+  display:flex;gap:6px;justify-content:center;flex-wrap:wrap;
+  margin-bottom:clamp(10px,2vh,16px);
+}
+
+.dur-btn {
+  padding:5px 12px;
+  border-radius:20px;
+  border:1px solid var(--card-border);
+  background:var(--btn-bg);
+  color:var(--text2);
+  font-family:var(--font-body);
+  font-size:clamp(11px,1.8vw,13px);
+  cursor:pointer;
+  transition:all 0.2s;
+  backdrop-filter:blur(6px);
+}
+.dur-btn:hover{transform:translateY(-1px);box-shadow:0 3px 10px rgba(0,0,0,0.1);}
+.dur-btn.active{
+  background:var(--btn-active);
+  color:#fff;
+  border-color:var(--btn-active);
+  box-shadow:0 0 14px var(--ring-glow);
+}
+
+/* ============================================================
+   CONTROLS
+   ============================================================ */
+.controls {
+  display:flex;gap:clamp(8px,2vw,14px);justify-content:center;align-items:center;
+  margin-top:clamp(10px,2vh,16px);
+}
+
+.ctrl-btn {
+  width:clamp(48px,11vw,62px);height:clamp(48px,11vw,62px);
+  border-radius:50%;border:1.5px solid var(--card-border);
+  background:var(--btn-bg);
+  color:var(--text);
+  font-size:clamp(16px,3vw,22px);
+  cursor:pointer;
+  transition:all 0.2s;
+  display:flex;align-items:center;justify-content:center;
+  backdrop-filter:blur(6px);
+  box-shadow:0 2px 10px rgba(0,0,0,0.08);
+}
+.ctrl-btn:hover{transform:scale(1.08);box-shadow:0 4px 20px rgba(0,0,0,0.15);}
+.ctrl-btn.play-btn {
+  width:clamp(62px,14vw,78px);height:clamp(62px,14vw,78px);
+  background:var(--btn-active);
+  border-color:var(--btn-active);
+  color:#fff;
+  font-size:clamp(20px,4vw,28px);
+  box-shadow:0 0 20px var(--ring-glow);
+}
+.ctrl-btn.play-btn:hover{box-shadow:0 0 35px var(--ring-glow);}
+
+/* ============================================================
+   BOTTOM ROW: COUNT + SOUND
+   ============================================================ */
+.bottom-row {
+  display:flex;gap:clamp(8px,2vw,14px);align-items:stretch;justify-content:center;
+  width:min(96vw,480px);
+}
+
+.info-card {
+  flex:1;
+  background:var(--card);
+  border:1px solid var(--card-border);
+  border-radius:clamp(12px,2vw,18px);
+  padding:clamp(10px,2vh,16px) clamp(12px,2vw,18px);
+  backdrop-filter:blur(12px);
+  box-shadow:0 4px 20px rgba(0,0,0,0.08), inset 0 1px 0 var(--shimmer);
+  text-align:center;
+  transition: background 0.5s, border-color 0.5s;
+}
+
+.info-label {
+  font-size:clamp(9px,1.3vw,11px);
+  letter-spacing:2px;
+  text-transform:uppercase;
+  color:var(--text2);
+  margin-bottom:4px;
+}
+
+.info-value {
+  font-family:var(--font-display);
+  font-size:clamp(20px,5vw,30px);
+  color:var(--text);
+  font-weight:700;
+}
+
+/* tomato icons row */
+.tomato-row {
+  display:flex;gap:3px;justify-content:center;margin-top:4px;flex-wrap:wrap;
+}
+.tomato-icon { font-size:clamp(12px,2.5vw,16px); opacity:0.3; transition:opacity 0.3s; }
+.tomato-icon.done { opacity:1; }
+
+/* ============================================================
+   SOUND PANEL
+   ============================================================ */
+.sound-grid {
+  display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;
+  width:100%;
+}
+.sound-btn {
+  padding:5px 6px;
+  border-radius:8px;
+  border:1px solid var(--card-border);
+  background:transparent;
+  color:var(--text2);
+  font-family:var(--font-body);
+  font-size:clamp(9px,1.5vw,11px);
+  cursor:pointer;
+  transition:all 0.2s;
+  display:flex;align-items:center;gap:4px;
+  justify-content:center;
+}
+.sound-btn:hover{background:var(--btn-bg);}
+.sound-btn.active{
+  background:var(--btn-active);
+  color:#fff;
+  border-color:var(--btn-active);
+}
+
+/* ============================================================
+   MOTIVATIONAL WORD
+   ============================================================ */
+.mot-word {
+  font-family:var(--font-display);
+  font-size:clamp(11px,2vw,14px);
+  color:var(--text2);
+  letter-spacing:1px;
+  height:18px;
+  transition:opacity 0.5s;
+  text-align:center;
+}
+
+/* ============================================================
+   CELEBRATION OVERLAY
+   ============================================================ */
+#celebOverlay {
+  position:fixed;inset:0;z-index:100;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  background:rgba(0,0,0,0.5);
+  backdrop-filter:blur(6px);
+  opacity:0;pointer-events:none;
+  transition:opacity 0.4s;
+}
+#celebOverlay.show{opacity:1;pointer-events:all;}
+
+.celeb-card {
+  background:var(--card);
+  border:1px solid var(--card-border);
+  border-radius:24px;
+  padding:40px 50px;
+  text-align:center;
+  backdrop-filter:blur(20px);
+  animation:celebPop 0.4s cubic-bezier(0.34,1.56,0.64,1) both;
+}
+@keyframes celebPop {
+  from{transform:scale(0.7);opacity:0}
+  to{transform:scale(1);opacity:1}
+}
+.celeb-emoji { font-size:60px; display:block; margin-bottom:12px; animation:spin 0.6s ease-out; }
+@keyframes spin{from{transform:rotate(-20deg) scale(0.5)}to{transform:rotate(0deg) scale(1)}}
+.celeb-title { font-family:var(--font-display); font-size:26px; color:var(--text); margin-bottom:6px; }
+.celeb-sub { color:var(--text2); font-size:14px; margin-bottom:20px; }
+.celeb-ok {
+  padding:10px 36px;border-radius:30px;
+  background:var(--btn-active);color:#fff;
+  border:none;font-family:var(--font-body);font-size:15px;
+  cursor:pointer;transition:all 0.2s;
+  box-shadow:0 0 20px var(--ring-glow);
+}
+.celeb-ok:hover{transform:scale(1.05);}
+
+/* ============================================================
+   MOTIVATIONAL WORD
+   ============================================================ */
+.mot-word {
+  font-family:var(--font-display);
+  font-size:clamp(11px,2vw,14px);
+  color:var(--text2);
+  letter-spacing:1px;
+  height:22px;
+  transition:opacity 0.5s, color 0.5s;
+  text-align:center;
+}
+
+/* ============================================================
+   SOUND PANEL
+   ============================================================ */
+.sound-grid {
+  display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;
+  width:100%;
+}
+.sound-btn {
+  padding:5px 6px;
+  border-radius:8px;
+  border:1px solid var(--card-border);
+  background:transparent;
+  color:var(--text2);
+  font-family:var(--font-body);
+  font-size:clamp(9px,1.5vw,11px);
+  cursor:pointer;
+  transition:all 0.2s;
+  display:flex;align-items:center;gap:4px;
+  justify-content:center;
+}
+.sound-btn:hover{background:var(--btn-bg);}
+.sound-btn.active{
+  background:var(--btn-active);
+  color:#fff;
+  border-color:var(--btn-active);
+}
+
+
+.conf { position:fixed; top:-10px; font-size:20px; animation:confFall linear forwards; pointer-events:none; z-index:101; }
+@keyframes confFall {
+  0%{transform:translateY(0) rotate(0deg);opacity:1}
+  100%{transform:translateY(110vh) rotate(720deg);opacity:0}
+}
+</style>
+</head>
+<body>
+
+<canvas id="bgCanvas"></canvas>
+
+<!-- Theme switcher -->
+<div class="theme-bar">
+  <button class="theme-btn active" id="tb0" onclick="setTheme(0)" title="草木テーマ">🌿</button>
+  <button class="theme-btn" id="tb1" onclick="setTheme(1)" title="星空テーマ">🌙</button>
+  <button class="theme-btn" id="tb2" onclick="setTheme(2)" title="太陽テーマ">☀️</button>
+</div>
+
+<!-- Celebration overlay -->
+<div id="celebOverlay">
+  <div class="celeb-card">
+    <span class="celeb-emoji" id="celebEmoji">🌸</span>
+    <div class="celeb-title" id="celebTitle">お疲れ様でした！</div>
+    <div class="celeb-sub" id="celebSub">素晴らしい集中でした</div>
+    <button class="celeb-ok" id="celebOk">✓ 次へ進む</button>
+  </div>
+</div>
+
+<div class="app">
+  <!-- Motivational word -->
+  <div class="mot-word" id="motWord">今日も一歩ずつ</div>
+
+  <!-- Main card -->
+  <div class="card">
+    <div class="status-label" id="statusLabel">集中タイム</div>
+
+    <!-- Ring timer -->
+    <div class="ring-wrap">
+      <svg viewBox="0 0 220 220">
+        <circle class="ring-track" cx="110" cy="110" r="95" stroke-width="10"/>
+        <circle class="ring-fill" id="ringFill" cx="110" cy="110" r="95"
+          stroke-width="10"
+          stroke-dasharray="597"
+          stroke-dashoffset="0"/>
+      </svg>
+      <div class="ring-center">
+        <div class="time-display" id="timeDisplay">25:00</div>
+        <div class="session-type" id="sessionType">FOCUS</div>
+      </div>
+    </div>
+
+    <!-- Duration buttons -->
+    <div class="duration-row" id="durRow"></div>
+
+    <!-- Controls -->
+    <div class="controls">
+      <button class="ctrl-btn" onclick="resetTimer()" title="リセット">↺</button>
+      <button class="ctrl-btn play-btn" id="playBtn" onclick="toggleTimer()">▶</button>
+      <button class="ctrl-btn" onclick="skipSession()" title="スキップ">⏭</button>
+    </div>
+  </div>
+
+  <!-- Motivational word -->
+  <div class="mot-word" id="motWord">今日も一歩ずつ</div>
+
+  <!-- Bottom row -->
+  <div class="bottom-row">
+    <!-- Count -->
+    <div class="info-card">
+      <div class="info-label">今日の集中</div>
+      <div class="info-value" id="pomCount">0</div>
+      <div class="tomato-row" id="tomatoRow"></div>
+    </div>
+    <!-- Sound -->
+    <div class="info-card">
+      <div class="info-label">環境音</div>
+      <div class="sound-grid" id="soundGrid"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ================================================
+   STATE
+   ================================================ */
+let theme = 0;
+const THEMES = ['theme-forest','theme-night','theme-sun'];
+
+// Durations: [minutes, label]
+const DURATIONS = [[1,'1分'],[3,'3分'],[5,'5分'],[10,'10分'],[25,'25分']];
+let selectedDur = 4; // index -> 25min default
+
+// Timer
+let totalSecs = 25*60;
+let remainSecs = 25*60;
+let running = false;
+let interval = null;
+let sessionType = 'focus'; // 'focus'|'short'|'long'
+let pomCount = 0;
+let pomInCycle = 0; // count in current 4-cycle
+
+// Break durations
+const SHORT_BREAK = 5;
+const LONG_BREAK = 15;
+
+/* Motivational messages */
+const MSGS = {
+  0: ['今日も一歩ずつ','森の静けさとともに','緑の息吹を感じて','自然があなたを応援している','焦らず、ゆっくりと'],
+  1: ['星が見守っています','夜空のように澄んだ集中を','静寂の中に答えがある','月明かりに照らされて','宇宙はあなたの味方'],
+  2: ['太陽のように輝け！','今日最高の自分へ','エネルギー全開！','輝く未来へ一歩','さあ、始めよう！'],
+};
+let motIdx = 0;
+
+/* ================================================
+   INIT
+   ================================================ */
+window.addEventListener('DOMContentLoaded', () => {
+  buildDurButtons();
+  buildSoundButtons();
+  updateTomatoRow();
+  updateDisplay();
+  updateRing();
+  updateStatusLabel();
+  setMotWord();
+  setInterval(cycleMotWord, 8000);
+  initCanvas();
+  startCanvasLoop();
+  setTheme(0);
+});
+
+/* ================================================
+   DURATION BUTTONS
+   ================================================ */
+function buildDurButtons() {
+  const row = document.getElementById('durRow');
+  DURATIONS.forEach(([min, label], i) => {
+    const b = document.createElement('button');
+    b.className = 'dur-btn' + (i===selectedDur?' active':'');
+    b.textContent = label;
+    b.onclick = () => selectDur(i);
+    row.appendChild(b);
+  });
+}
+
+function selectDur(i) {
+  if (running) return;
+  selectedDur = i;
+  document.querySelectorAll('.dur-btn').forEach((b,j)=>b.classList.toggle('active',j===i));
+  totalSecs = DURATIONS[i][0]*60;
+  remainSecs = totalSecs;
+  sessionType = 'focus';
+  updateDisplay();
+  updateRing();
+  updateStatusLabel();
+}
+
+/* ================================================
+   TIMER
+   ================================================ */
+function toggleTimer() {
+  running ? pauseTimer() : startTimer();
+}
+
+function startTimer() {
+  running = true;
+  document.getElementById('playBtn').textContent = '⏸';
+  interval = setInterval(tick, 1000);
+}
+
+function pauseTimer() {
+  running = false;
+  document.getElementById('playBtn').textContent = '▶';
+  clearInterval(interval);
+}
+
+function resetTimer() {
+  pauseTimer();
+  sessionType = 'focus';
+  totalSecs = DURATIONS[selectedDur][0]*60;
+  remainSecs = totalSecs;
+  updateDisplay();
+  updateRing();
+  updateStatusLabel();
+}
+
+function skipSession() {
+  pauseTimer();
+  onSessionEnd(true);
+}
+
+function tick() {
+  remainSecs--;
+  updateDisplay();
+  updateRing();
+  if (remainSecs <= 0) {
+    pauseTimer();
+    onSessionEnd(false);
+  }
+}
+
+function onSessionEnd(skipped) {
+  if (sessionType === 'focus' && !skipped) {
+    pomCount++;
+    pomInCycle++;
+    updateTomatoRow();
+  }
+  if (!skipped) playTimerEnd(sessionType === 'focus');
+  showCelebration(skipped);
+}
+
+/* ================================================
+   TIMER-END SOUND EFFECT
+   スマホ対応：AudioContext は必ずユーザー操作後に
+   作成済みなので ensureAudio() で resume するだけでOK
+   ================================================ */
+function playTimerEnd(isFocus) {
+  ensureAudio();
+  const now = audioCtx.currentTime;
+
+  if (isFocus) {
+    // ── 集中完了：やわらかいチャイム3音 ──
+    // Cメジャー：E5 → G5 → C6 と上昇してリバーブ
+    const chimeFreqs = [659.25, 783.99, 1046.50];
+    chimeFreqs.forEach((freq, i) => {
+      const t = now + i * 0.32;
+
+      // 基音（サイン波）
+      const o = audioCtx.createOscillator(); o.type = 'sine'; o.frequency.value = freq;
+      // 倍音（三角波で柔らかみ）
+      const o2 = audioCtx.createOscillator(); o2.type = 'triangle'; o2.frequency.value = freq * 2; o2.detune.value = 3;
+
+      const g = audioCtx.createGain();
+      const g2 = audioCtx.createGain(); g2.gain.value = 0.28;
+
+      // ディレイ（残響）
+      const delay = audioCtx.createDelay(2.0); delay.delayTime.value = 0.45;
+      const fbG = audioCtx.createGain(); fbG.gain.value = 0.38;
+      const wetG = audioCtx.createGain(); wetG.gain.value = 0.42;
+
+      // エンベロープ：ふわっと立ち上がって長めに伸びる
+      g.gain.setValueAtTime(0, t);
+      g.gain.linearRampToValueAtTime(0.22, t + 0.05);
+      g.gain.setValueAtTime(0.22, t + 0.15);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 2.2);
+
+      o2.connect(g2); g2.connect(g);
+      o.connect(g);
+      delay.connect(fbG); fbG.connect(delay);
+      g.connect(delay); delay.connect(wetG);
+      g.connect(audioCtx.destination);
+      wetG.connect(audioCtx.destination);
+
+      o.start(t); o.stop(t + 2.3);
+      o2.start(t); o2.stop(t + 2.3);
+    });
+
+    // キラキラ感：最後に高音スパークル
+    const sparkT = now + 1.1;
+    const sp = audioCtx.createOscillator(); sp.type = 'sine'; sp.frequency.value = 2093;
+    const spG = audioCtx.createGain();
+    spG.gain.setValueAtTime(0, sparkT);
+    spG.gain.linearRampToValueAtTime(0.09, sparkT + 0.02);
+    spG.gain.exponentialRampToValueAtTime(0.0001, sparkT + 0.8);
+    sp.connect(spG); spG.connect(audioCtx.destination);
+    sp.start(sparkT); sp.stop(sparkT + 0.85);
+
+  } else {
+    // ── 休憩終了：やさしいボーン（低め単音） ──
+    // G3 → E3 の2音で「さあ戻ろう」感
+    [[196.00, 0], [164.81, 0.4]].forEach(([freq, delay]) => {
+      const t = now + delay;
+      const o = audioCtx.createOscillator(); o.type = 'sine'; o.frequency.value = freq;
+      const o2 = audioCtx.createOscillator(); o2.type = 'triangle'; o2.frequency.value = freq * 1.5; o2.detune.value = -4;
+      const g = audioCtx.createGain();
+      const g2 = audioCtx.createGain(); g2.gain.value = 0.3;
+      g.gain.setValueAtTime(0, t);
+      g.gain.linearRampToValueAtTime(0.18, t + 0.04);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 1.6);
+      o2.connect(g2); g2.connect(g);
+      o.connect(g); g.connect(audioCtx.destination);
+      o.start(t); o.stop(t + 1.7);
+      o2.start(t); o2.stop(t + 1.7);
+    });
+  }
+}
+
+/* ── スマホ用：最初のタッチで AudioContext をアンロック ── */
+(function unlockAudio() {
+  const unlock = () => {
+    ensureAudio();
+    // 無音バッファを1回再生してiOSをアンロック
+    const buf = audioCtx.createBuffer(1, 1, audioCtx.sampleRate);
+    const src = audioCtx.createBufferSource(); src.buffer = buf;
+    src.connect(audioCtx.destination); src.start(0);
+    document.removeEventListener('touchstart', unlock);
+    document.removeEventListener('touchend', unlock);
+    document.removeEventListener('click', unlock);
+  };
+  document.addEventListener('touchstart', unlock, {passive:true});
+  document.addEventListener('touchend',   unlock, {passive:true});
+  document.addEventListener('click',      unlock, {passive:true});
+})();
+
+
+/* ================================================
+   CELEBRATION + NEXT SESSION
+   ================================================ */
+function showCelebration(skipped) {
+  const overlay = document.getElementById('celebOverlay');
+  const emoji = document.getElementById('celebEmoji');
+  const title = document.getElementById('celebTitle');
+  const sub = document.getElementById('celebSub');
+  const ok = document.getElementById('celebOk');
+
+  const FOCUS_CELEB = [
+    {e:'🌸',t:'お疲れ様でした！',s:'素晴らしい集中でした'},
+    {e:'🎉',t:'やったね！',s:'また一つ達成しました'},
+    {e:'✨',t:'集中タイム完了！',s:'あなたは輝いています'},
+    {e:'🌿',t:'素晴らしい！',s:'緑の祝福があなたに'},
+  ];
+
+  if (skipped) {
+    emoji.textContent = '⏭'; title.textContent = 'スキップ'; sub.textContent = 'また次のセッションで！';
+  } else if (sessionType === 'focus') {
+    const c = FOCUS_CELEB[pomCount % FOCUS_CELEB.length];
+    emoji.textContent = c.e; title.textContent = c.t; sub.textContent = c.s;
+    if (!skipped) launchConfetti();
+  } else {
+    emoji.textContent = '💧'; title.textContent = '休憩終了！'; sub.textContent = '次の集中タイムを始めよう';
+  }
+
+  overlay.classList.add('show');
+
+  ok.onclick = () => {
+    overlay.classList.remove('show');
+    advanceSession(skipped);
+  };
+}
+
+function advanceSession(skipped) {
+  if (sessionType === 'focus') {
+    if (!skipped) {
+      if (pomInCycle >= 4) { pomInCycle = 0; startBreak('long'); }
+      else { startBreak('short'); }
+    } else {
+      resetTimer();
+    }
+  } else {
+    startFocus();
+  }
+}
+
+function startFocus() {
+  sessionType = 'focus';
+  totalSecs = DURATIONS[selectedDur][0]*60;
+  remainSecs = totalSecs;
+  updateDisplay(); updateRing(); updateStatusLabel();
+}
+
+function startBreak(type) {
+  sessionType = type;
+  const mins = type === 'long' ? LONG_BREAK : SHORT_BREAK;
+  totalSecs = mins*60;
+  remainSecs = totalSecs;
+  updateDisplay(); updateRing(); updateStatusLabel();
+}
+
+/* ================================================
+   DISPLAY
+   ================================================ */
+function updateDisplay() {
+  const m = String(Math.floor(remainSecs/60)).padStart(2,'0');
+  const s = String(remainSecs%60).padStart(2,'0');
+  document.getElementById('timeDisplay').textContent = `${m}:${s}`;
+  document.getElementById('pomCount').textContent = pomCount;
+}
+
+function updateRing() {
+  const circ = 597; // 2π×95
+  const pct = remainSecs / totalSecs;
+  const offset = circ * (1 - pct);
+  document.getElementById('ringFill').style.strokeDashoffset = offset;
+}
+
+function updateStatusLabel() {
+  const labels = {focus:'集中タイム', short:'短い休憩', long:'長い休憩'};
+  const types  = {focus:'FOCUS', short:'SHORT BREAK', long:'LONG BREAK'};
+  document.getElementById('statusLabel').textContent = labels[sessionType];
+  document.getElementById('sessionType').textContent = types[sessionType];
+}
+
+function updateTomatoRow() {
+  const row = document.getElementById('tomatoRow');
+  row.innerHTML = '';
+  for (let i=0;i<4;i++) {
+    const s = document.createElement('span');
+    s.className = 'tomato-icon' + (i < pomInCycle ? ' done':'');
+    s.textContent = '🍅';
+    row.appendChild(s);
+  }
+}
+
+/* ================================================
+   MOTIVATIONAL WORDS
+   ================================================ */
+function setMotWord() {
+  const msgs = MSGS[theme];
+  const el = document.getElementById('motWord');
+  el.style.opacity = '0';
+  setTimeout(()=>{
+    el.textContent = msgs[motIdx % msgs.length];
+    el.style.opacity = '1';
+    motIdx++;
+  }, 400);
+}
+function cycleMotWord() { setMotWord(); }
+
+/* ================================================
+   SOUND ENGINE (Web Audio API — synthesized)
+   ================================================ */
+let audioCtx = null;
+let activeSound = null;
+let soundNodes = [];
+let scheduledTimeouts = [];
+
+const SOUNDS = [
+  {id:'rain',   label:'🌧 雨音',     gen: genRain},
+  {id:'wave',   label:'🌊 波の音',   gen: genWave},
+  {id:'forest', label:'🌳 小鳥と風', gen: genForest},
+  {id:'night',  label:'🌙 夜の虫',   gen: genNight},
+  {id:'heal',   label:'✨ ヒーリング',gen: genHealing},
+  {id:'box',    label:'🎵 オルゴール',gen: genMusicBox},
+];
+
+function buildSoundButtons() {
+  const grid = document.getElementById('soundGrid');
+  grid.style.gridTemplateColumns = '1fr 1fr 1fr';
+  SOUNDS.forEach(s => {
+    const b = document.createElement('button');
+    b.className='sound-btn'; b.id='sb-'+s.id;
+    b.innerHTML = s.label;
+    b.onclick = () => toggleSound(s.id, s.gen);
+    grid.appendChild(b);
+  });
+}
+
+function ensureAudio() {
+  if (!audioCtx) audioCtx = new (window.AudioContext||window.webkitAudioContext)();
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+}
+
+function stopSound() {
+  scheduledTimeouts.forEach(t => clearTimeout(t));
+  scheduledTimeouts = [];
+  soundNodes.forEach(n=>{try{n.stop();}catch(e){}});
+  soundNodes = [];
+  activeSound = null;
+  document.querySelectorAll('.sound-btn').forEach(b=>b.classList.remove('active'));
+}
+
+function toggleSound(id, gen) {
+  ensureAudio();
+  if (activeSound === id) { stopSound(); return; }
+  stopSound();
+  activeSound = id;
+  document.getElementById('sb-'+id).classList.add('active');
+  gen();
+}
+
+/* --- ノイズバッファ生成ユーティリティ --- */
+function makeNoiseBuffer(seconds) {
+  const buf = audioCtx.createBuffer(1, audioCtx.sampleRate * seconds, audioCtx.sampleRate);
+  const d = buf.getChannelData(0);
+  for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+  return buf;
+}
+
+function makeNoiseSrc(vol, filterType, freq, q) {
+  const src = audioCtx.createBufferSource();
+  src.buffer = makeNoiseBuffer(3); src.loop = true;
+  const f = audioCtx.createBiquadFilter(); f.type=filterType; f.frequency.value=freq; f.Q.value=q;
+  const g = audioCtx.createGain(); g.gain.value = vol;
+  src.connect(f); f.connect(g); g.connect(audioCtx.destination);
+  src.start(); soundNodes.push(src, f, g);
+  return {src, gain: g};
+}
+
+/* --- 🌧 雨音（白色ノイズ＋水滴） --- */
+function genRain() {
+  // 白色ノイズ層（しとしと）
+  const {gain: gBase} = makeNoiseSrc(0.18, 'bandpass', 1800, 0.4);
+  // 低域ぼわっと（地面の反響）
+  makeNoiseSrc(0.08, 'lowpass', 300, 0.8);
+
+  // 水滴ぽつっ
+  function drop() {
+    if (activeSound !== 'rain') return;
+    const o = audioCtx.createOscillator(); o.type = 'sine';
+    o.frequency.value = 800 + Math.random() * 600;
+    const g = audioCtx.createGain();
+    const now = audioCtx.currentTime;
+    g.gain.setValueAtTime(0, now);
+    g.gain.linearRampToValueAtTime(0.06, now + 0.01);
+    g.gain.exponentialRampToValueAtTime(0.0001, now + 0.18);
+    o.connect(g); g.connect(audioCtx.destination);
+    o.start(now); o.stop(now + 0.2);
+    const t = setTimeout(drop, 80 + Math.random() * 300);
+    scheduledTimeouts.push(t);
+  }
+  drop();
+}
+
+/* --- 🌊 波の音（呼吸するノイズ） --- */
+function genWave() {
+  const sr = audioCtx.sampleRate;
+  // フィルタリングされたノイズ（波の質感）
+  const src = audioCtx.createBufferSource();
+  src.buffer = makeNoiseBuffer(4); src.loop = true;
+  const lpf = audioCtx.createBiquadFilter(); lpf.type='lowpass'; lpf.frequency.value=900; lpf.Q.value=0.6;
+  const masterG = audioCtx.createGain(); masterG.gain.value = 0.5;
+  src.connect(lpf); lpf.connect(masterG); masterG.connect(audioCtx.destination);
+  src.start(); soundNodes.push(src);
+
+  // ゆっくり満ち引き（LFOで音量を揺らす）
+  const lfo = audioCtx.createOscillator(); lfo.type = 'sine'; lfo.frequency.value = 0.14;
+  const lfoG = audioCtx.createGain(); lfoG.gain.value = 0.3;
+  lfo.connect(lfoG); lfoG.connect(masterG.gain);
+  lfo.start(); soundNodes.push(lfo);
+
+  // 砂浜の音（高域ノイズをかすかに）
+  const src2 = audioCtx.createBufferSource();
+  src2.buffer = makeNoiseBuffer(3); src2.loop = true;
+  const hpf = audioCtx.createBiquadFilter(); hpf.type='highpass'; hpf.frequency.value=3000;
+  const g2 = audioCtx.createGain(); g2.gain.value = 0.04;
+  src2.connect(hpf); hpf.connect(g2); g2.connect(audioCtx.destination);
+  src2.start(); soundNodes.push(src2);
+}
+
+/* --- 🌳 小鳥と風 --- */
+function genForest() {
+  // そよ風（低域ノイズ）
+  makeNoiseSrc(0.06, 'lowpass', 350, 0.5);
+  // 葉ずれ（中域ノイズ、LFOで揺れ）
+  const {gain: leafG} = makeNoiseSrc(0.04, 'bandpass', 1200, 1.5);
+  const leafLfo = audioCtx.createOscillator(); leafLfo.frequency.value = 0.3;
+  const leafLfoG = audioCtx.createGain(); leafLfoG.gain.value = 0.025;
+  leafLfo.connect(leafLfoG); leafLfoG.connect(leafG.gain);
+  leafLfo.start(); soundNodes.push(leafLfo);
+
+  // 小鳥のさえずり（2音の囀り）
+  function birdCall() {
+    if (activeSound !== 'forest') return;
+    const baseFreq = 1400 + Math.random() * 1200;
+    const now = audioCtx.currentTime;
+    // 2〜3音のフレーズ
+    const notes = 2 + Math.floor(Math.random() * 2);
+    for (let n = 0; n < notes; n++) {
+      const o = audioCtx.createOscillator(); o.type = 'sine';
+      const g = audioCtx.createGain();
+      const t = now + n * 0.14;
+      const freq = baseFreq + (Math.random() - 0.5) * 400;
+      o.frequency.setValueAtTime(freq, t);
+      o.frequency.linearRampToValueAtTime(freq * 1.08, t + 0.06);
+      g.gain.setValueAtTime(0, t);
+      g.gain.linearRampToValueAtTime(0.07, t + 0.03);
+      g.gain.linearRampToValueAtTime(0, t + 0.12);
+      o.connect(g); g.connect(audioCtx.destination);
+      o.start(t); o.stop(t + 0.15);
+    }
+    const t2 = setTimeout(birdCall, 1500 + Math.random() * 3500);
+    scheduledTimeouts.push(t2);
+  }
+  birdCall();
+}
+
+/* --- 🌙 夜の虫（鈴虫 + 遠い蛙） --- */
+function genNight() {
+  // 鈴虫：澄んだ正弦波を細かく振動させる
+  [2800, 3000, 3200].forEach((freq, i) => {
+    const o = audioCtx.createOscillator(); o.type = 'sine'; o.frequency.value = freq;
+    const tremoloLfo = audioCtx.createOscillator();
+    tremoloLfo.type = 'sine'; tremoloLfo.frequency.value = 14 + i * 1.5;
+    const tremoloG = audioCtx.createGain(); tremoloG.gain.value = 0.018;
+    const masterG = audioCtx.createGain(); masterG.gain.value = 0.022;
+    // リバーブ風：ディレイ
+    const delay = audioCtx.createDelay(); delay.delayTime.value = 0.05;
+    const fbG = audioCtx.createGain(); fbG.gain.value = 0.3;
+    tremoloLfo.connect(tremoloG); tremoloG.connect(masterG.gain);
+    o.connect(masterG); masterG.connect(delay); delay.connect(fbG); fbG.connect(delay);
+    masterG.connect(audioCtx.destination); delay.connect(audioCtx.destination);
+    o.start(); tremoloLfo.start();
+    soundNodes.push(o, tremoloLfo);
+  });
+
+  // 遠い蛙（低い短音）
+  function frog() {
+    if (activeSound !== 'night') return;
+    if (Math.random() < 0.4) {
+      const o = audioCtx.createOscillator(); o.type = 'sine'; o.frequency.value = 180 + Math.random() * 60;
+      const g = audioCtx.createGain();
+      const now = audioCtx.currentTime;
+      g.gain.setValueAtTime(0, now);
+      g.gain.linearRampToValueAtTime(0.05, now + 0.04);
+      g.gain.exponentialRampToValueAtTime(0.0001, now + 0.25);
+      o.connect(g); g.connect(audioCtx.destination);
+      o.start(now); o.stop(now + 0.3);
+    }
+    const t = setTimeout(frog, 2000 + Math.random() * 4000);
+    scheduledTimeouts.push(t);
+  }
+  frog();
+
+  // 遠くの夜風
+  makeNoiseSrc(0.025, 'lowpass', 200, 0.4);
+}
+
+/* --- ✨ ヒーリングミュージック（倍音豊かなドローン＋メロディ） --- */
+function genHealing() {
+  // ドローン：C・G・E の倍音を重ねた持続音
+  const droneNotes = [130.81, 196.00, 164.81, 261.63, 392.00]; // C3 G3 E3 C4 G4
+  droneNotes.forEach((freq, i) => {
+    const o = audioCtx.createOscillator();
+    o.type = i < 2 ? 'sine' : 'triangle';
+    o.frequency.value = freq;
+    // ピッチをわずかにデチューン
+    o.detune.value = (i % 3 - 1) * 4;
+    const g = audioCtx.createGain(); g.gain.value = 0.045 - i * 0.005;
+    // ゆっくりフェードイン
+    g.gain.setValueAtTime(0, audioCtx.currentTime);
+    g.gain.linearRampToValueAtTime(0.045 - i * 0.005, audioCtx.currentTime + 2);
+    // LFOでかすかに揺らす（ビブラート感）
+    const vib = audioCtx.createOscillator(); vib.frequency.value = 0.5 + i * 0.1;
+    const vibG = audioCtx.createGain(); vibG.gain.value = 2;
+    vib.connect(vibG); vibG.connect(o.detune);
+    o.connect(g); g.connect(audioCtx.destination);
+    o.start(); vib.start();
+    soundNodes.push(o, vib);
+  });
+
+  // ハイ倍音（天上感）
+  makeNoiseSrc(0.012, 'bandpass', 5000, 8);
+
+  // ゆったりメロディ（Cメジャーペンタ：C D E G A）
+  const scale = [261.63, 293.66, 329.63, 392.00, 440.00, 523.25, 587.33, 659.25];
+  let melIdx = 0;
+  function melodyNote() {
+    if (activeSound !== 'heal') return;
+    const freq = scale[melIdx % scale.length];
+    melIdx = (melIdx + Math.floor(1 + Math.random() * 2)) % scale.length;
+    const o = audioCtx.createOscillator(); o.type = 'sine';
+    o.frequency.value = freq;
+    const g = audioCtx.createGain();
+    // ディレイリバーブ（空間感）
+    const delay = audioCtx.createDelay(1.0); delay.delayTime.value = 0.38;
+    const fbG = audioCtx.createGain(); fbG.gain.value = 0.45;
+    const wetG = audioCtx.createGain(); wetG.gain.value = 0.4;
+    const dryG = audioCtx.createGain(); dryG.gain.value = 0.6;
+    delay.connect(fbG); fbG.connect(delay); delay.connect(wetG);
+    const now = audioCtx.currentTime;
+    g.gain.setValueAtTime(0, now);
+    g.gain.linearRampToValueAtTime(0.08, now + 0.08);
+    g.gain.setValueAtTime(0.08, now + 0.3);
+    g.gain.exponentialRampToValueAtTime(0.0001, now + 1.2);
+    o.connect(g);
+    g.connect(dryG); dryG.connect(audioCtx.destination);
+    g.connect(delay); wetG.connect(audioCtx.destination);
+    o.start(now); o.stop(now + 1.3);
+    const interval = 1200 + Math.random() * 800;
+    const t = setTimeout(melodyNote, interval);
+    scheduledTimeouts.push(t);
+  }
+  melodyNote();
+}
+
+/* --- 🎵 オルゴール（きらきらした音符） --- */
+function genMusicBox() {
+  // Cメジャースケール（2オクターブ）
+  const notes = [523.25,587.33,659.25,698.46,783.99,880.00,987.77,1046.50,
+                 1174.66,1318.51,1396.91,1567.98];
+  // ゆったりした和音進行パターン
+  const pattern = [
+    [0,2,4],[2,4,7],[4,7,9],[0,4,7],
+    [2,4,9],[0,2,7],[4,7,11],[0,2,4],
+  ];
+  let patIdx = 0;
+
+  function chord() {
+    if (activeSound !== 'box') return;
+    const chordNotes = pattern[patIdx % pattern.length];
+    patIdx++;
+    chordNotes.forEach((ni, i) => {
+      const freq = notes[ni % notes.length];
+      const now = audioCtx.currentTime + i * 0.06;
+      const o = audioCtx.createOscillator(); o.type = 'sine';
+      o.frequency.value = freq;
+      // 倍音（オルゴールらしさ）
+      const o2 = audioCtx.createOscillator(); o2.type = 'triangle';
+      o2.frequency.value = freq * 2; o2.detune.value = 5;
+      const g = audioCtx.createGain();
+      const g2 = audioCtx.createGain(); g2.gain.value = 0.25;
+      // ディレイで響かせる
+      const delay = audioCtx.createDelay(1.5); delay.delayTime.value = 0.5;
+      const fbG = audioCtx.createGain(); fbG.gain.value = 0.35;
+      const wetG = audioCtx.createGain(); wetG.gain.value = 0.35;
+      delay.connect(fbG); fbG.connect(delay); delay.connect(wetG); wetG.connect(audioCtx.destination);
+      g.gain.setValueAtTime(0, now);
+      g.gain.linearRampToValueAtTime(0.09, now + 0.01);
+      g.gain.exponentialRampToValueAtTime(0.0001, now + 1.8);
+      o.connect(g); o2.connect(g2); g2.connect(g);
+      g.connect(audioCtx.destination); g.connect(delay);
+      o.start(now); o.stop(now + 2);
+      o2.start(now); o2.stop(now + 2);
+    });
+    const t = setTimeout(chord, 1600 + Math.random() * 600);
+    scheduledTimeouts.push(t);
+  }
+  chord();
+
+  // かすかな鈴音（高域スパークル）
+  function sparkle() {
+    if (activeSound !== 'box') return;
+    const freq = 2000 + Math.random() * 2000;
+    const now = audioCtx.currentTime;
+    const o = audioCtx.createOscillator(); o.type = 'sine'; o.frequency.value = freq;
+    const g = audioCtx.createGain();
+    g.gain.setValueAtTime(0, now);
+    g.gain.linearRampToValueAtTime(0.04, now + 0.005);
+    g.gain.exponentialRampToValueAtTime(0.0001, now + 0.5);
+    o.connect(g); g.connect(audioCtx.destination);
+    o.start(now); o.stop(now + 0.5);
+    const t = setTimeout(sparkle, 300 + Math.random() * 800);
+    scheduledTimeouts.push(t);
+  }
+  sparkle();
+}
+
+/* ================================================
+   CONFETTI
+   ================================================ */
+const CONF_CHARS = ['🌸','✨','🍀','⭐','🌟','💫','🎊'];
+function launchConfetti() {
+  for(let i=0;i<20;i++){
+    setTimeout(()=>{
+      const el=document.createElement('div'); el.className='conf';
+      el.textContent=CONF_CHARS[Math.floor(Math.random()*CONF_CHARS.length)];
+      el.style.left=Math.random()*100+'vw';
+      el.style.fontSize=(14+Math.random()*16)+'px';
+      const dur=2+Math.random()*2;
+      el.style.animationDuration=dur+'s';
+      el.style.animationDelay=(Math.random()*0.5)+'s';
+      document.body.appendChild(el);
+      setTimeout(()=>el.remove(),(dur+0.5)*1000);
+    }, i*60);
+  }
+}
+
+/* ================================================
+   THEME
+   ================================================ */
+function setTheme(t) {
+  theme = t;
+  document.body.className = ['','theme-night','theme-sun'][t];
+  document.querySelectorAll('.theme-btn').forEach((b,i)=>b.classList.toggle('active',i===t));
+  motIdx = 0; setMotWord();
+  // redraw canvas immediately
+  bgTheme = t;
+}
+
+/* ================================================
+   CANVAS BACKGROUND
+   ================================================ */
+const canvas = document.getElementById('bgCanvas');
+const ctx2 = canvas.getContext('2d');
+let bgTheme = 0;
+let cT = 0;
+
+// Forest theme objects
+const leaves = Array.from({length:30},()=>({
+  x:Math.random(), y:Math.random(), r:4+Math.random()*18,
+  phase:Math.random()*Math.PI*2, spd:0.2+Math.random()*0.4,
+  hue:90+Math.floor(Math.random()*40), drift:0.1+Math.random()*0.3
+}));
+const fireflies = Array.from({length:15},()=>({
+  x:Math.random(), y:Math.random(), phase:Math.random()*Math.PI*2, spd:0.5+Math.random()
+}));
+
+// Night theme
+const stars2 = Array.from({length:180},()=>({
+  x:Math.random(), y:Math.random()*0.7, r:0.5+Math.random()*2,
+  phase:Math.random()*Math.PI*2, spd:0.5+Math.random()
+}));
+const shootStarData = {x:0,y:0,active:false,timer:0};
+
+// Sun theme
+const sunRays = Array.from({length:16},(_,i)=>({angle:i/16*Math.PI*2}));
+const bubbles = Array.from({length:22},()=>({
+  x:Math.random(), y:Math.random(), r:8+Math.random()*25,
+  phase:Math.random()*Math.PI*2, spd:0.1+Math.random()*0.25, vx:(Math.random()-0.5)*0.0005
+}));
+
+function resize() { canvas.width=innerWidth; canvas.height=innerHeight; }
+resize(); window.addEventListener('resize', resize);
+
+function initCanvas(){}
+
+function startCanvasLoop() { requestAnimationFrame(loop); }
+
+function loop() {
+  cT += 0.012;
+  const W=canvas.width, H=canvas.height;
+  ctx2.clearRect(0,0,W,H);
+
+  if (bgTheme===0) drawForest(W,H);
+  else if (bgTheme===1) drawNight(W,H);
+  else drawSun(W,H);
+
+  requestAnimationFrame(loop);
+}
+
+/* ---- FOREST ---- */
+function drawForest(W,H) {
+  // Sky gradient
+  const sky=ctx2.createLinearGradient(0,0,0,H);
+  sky.addColorStop(0,'#c8e8a8'); sky.addColorStop(0.5,'#d8f0b8'); sky.addColorStop(1,'#a0c878');
+  ctx2.fillStyle=sky; ctx2.fillRect(0,0,W,H);
+
+  // Distant hills
+  ctx2.fillStyle='rgba(120,170,80,0.4)';
+  ctx2.beginPath(); ctx2.moveTo(0,H*0.75);
+  for(let x=0;x<=W;x+=40){
+    const y=H*0.68+Math.sin(x*0.008+cT*0.05)*H*0.05;
+    ctx2.lineTo(x,y);
+  }
+  ctx2.lineTo(W,H); ctx2.lineTo(0,H); ctx2.fill();
+
+  // Ground
+  const ground=ctx2.createLinearGradient(0,H*0.8,0,H);
+  ground.addColorStop(0,'#7ab850'); ground.addColorStop(1,'#4a8c30');
+  ctx2.fillStyle=ground; ctx2.fillRect(0,H*0.8,W,H*0.2);
+
+  // Floating leaves / petals
+  leaves.forEach(l=>{
+    l.phase += l.spd * 0.008;
+    l.x += Math.sin(l.phase)*0.0003;
+    l.y += l.drift * 0.0004;
+    if(l.y>1.1){l.y=-0.05; l.x=Math.random();}
+    ctx2.save();
+    ctx2.globalAlpha=0.45+Math.sin(l.phase)*0.2;
+    ctx2.translate(l.x*W, l.y*H);
+    ctx2.rotate(l.phase);
+    ctx2.fillStyle=`hsl(${l.hue},60%,55%)`;
+    ctx2.beginPath();
+    ctx2.ellipse(0,0,l.r,l.r*0.55,0,0,Math.PI*2);
+    ctx2.fill();
+    ctx2.restore();
+  });
+
+  // Trees silhouettes
+  const treePositions=[0.05,0.12,0.82,0.9,0.95];
+  treePositions.forEach(px=>{
+    const tx=px*W, ty=H*0.8;
+    const h=H*0.35, tr=H*0.12;
+    ctx2.fillStyle='rgba(40,80,20,0.5)';
+    ctx2.fillRect(tx-5,ty-h,10,h);
+    ctx2.beginPath(); ctx2.arc(tx,ty-h,tr,0,Math.PI*2); ctx2.fill();
+  });
+
+  // Fireflies
+  fireflies.forEach(f=>{
+    f.phase+=f.spd*0.025;
+    f.x+=Math.sin(f.phase*0.7)*0.0008;
+    f.y+=Math.cos(f.phase*0.5)*0.0008;
+    if(f.x<0)f.x=1; if(f.x>1)f.x=0;
+    f.y=Math.max(0.3,Math.min(0.85,f.y));
+    const alpha=0.3+0.7*Math.abs(Math.sin(f.phase));
+    ctx2.save();
+    ctx2.globalAlpha=alpha;
+    ctx2.fillStyle='#aaffaa';
+    ctx2.shadowColor='#88ff88'; ctx2.shadowBlur=10;
+    ctx2.beginPath(); ctx2.arc(f.x*W,f.y*H,2.5,0,Math.PI*2); ctx2.fill();
+    ctx2.restore();
+  });
+
+  // Light beams from top
+  for(let i=0;i<4;i++){
+    const bx=(0.2+i*0.2)*W;
+    const gr=ctx2.createLinearGradient(bx,0,bx,H*0.6);
+    gr.addColorStop(0,'rgba(255,255,200,0.06)'); gr.addColorStop(1,'transparent');
+    ctx2.fillStyle=gr;
+    ctx2.save(); ctx2.translate(bx,0); ctx2.rotate(Math.sin(cT*0.1+i)*0.05);
+    ctx2.fillRect(-15,0,30,H*0.6); ctx2.restore();
+  }
+}
+
+/* ---- NIGHT ---- */
+function drawNight(W,H) {
+  const sky=ctx2.createLinearGradient(0,0,0,H);
+  sky.addColorStop(0,'#03071a'); sky.addColorStop(0.6,'#0b1a40'); sky.addColorStop(1,'#1a2255');
+  ctx2.fillStyle=sky; ctx2.fillRect(0,0,W,H);
+
+  // Stars
+  stars2.forEach(s=>{
+    s.phase+=s.spd*0.008;
+    const a=0.4+0.6*Math.abs(Math.sin(s.phase));
+    ctx2.save(); ctx2.globalAlpha=a;
+    ctx2.fillStyle='#fff';
+    ctx2.shadowColor='#aabbff'; ctx2.shadowBlur=6;
+    ctx2.beginPath(); ctx2.arc(s.x*W,s.y*H,s.r,0,Math.PI*2); ctx2.fill();
+    ctx2.restore();
+  });
+
+  // Shooting star
+  shootStarData.timer--;
+  if(shootStarData.timer<=0){
+    shootStarData.x=Math.random()*0.5; shootStarData.y=Math.random()*0.3;
+    shootStarData.active=true; shootStarData.timer=200+Math.floor(Math.random()*300);
+    shootStarData.life=0;
+  }
+  if(shootStarData.active){
+    shootStarData.life=(shootStarData.life||0)+1;
+    const pct=shootStarData.life/40;
+    if(pct<1){
+      const sx=shootStarData.x*W+pct*W*0.2, sy=shootStarData.y*H+pct*H*0.1;
+      ctx2.save(); ctx2.globalAlpha=1-pct;
+      ctx2.strokeStyle='#ffffffcc'; ctx2.lineWidth=1.5;
+      ctx2.beginPath(); ctx2.moveTo(sx,sy); ctx2.lineTo(sx-30,sy-15); ctx2.stroke();
+      ctx2.restore();
+    } else { shootStarData.active=false; }
+  }
+
+  // Moon
+  const moonX=W*0.78, moonY=H*0.18;
+  ctx2.save();
+  // Glow
+  const mg=ctx2.createRadialGradient(moonX,moonY,10,moonX,moonY,80);
+  mg.addColorStop(0,'rgba(220,220,180,0.3)'); mg.addColorStop(1,'transparent');
+  ctx2.fillStyle=mg; ctx2.beginPath(); ctx2.arc(moonX,moonY,80,0,Math.PI*2); ctx2.fill();
+  // Body
+  ctx2.fillStyle='#f5e8c0'; ctx2.shadowColor='#ffe8a0'; ctx2.shadowBlur=20;
+  ctx2.beginPath(); ctx2.arc(moonX,moonY,36,0,Math.PI*2); ctx2.fill();
+  // Crater
+  ctx2.fillStyle='rgba(200,180,100,0.4)';
+  ctx2.beginPath(); ctx2.arc(moonX-8,moonY-5,8,0,Math.PI*2); ctx2.fill();
+  ctx2.beginPath(); ctx2.arc(moonX+10,moonY+10,5,0,Math.PI*2); ctx2.fill();
+  ctx2.restore();
+
+  // Aurora bands
+  for(let i=0;i<3;i++){
+    const ay=H*(0.3+i*0.07)+Math.sin(cT*0.4+i)*H*0.02;
+    const aw=W*(0.3+Math.sin(cT*0.2+i)*0.1);
+    const ax=W*(0.2+i*0.2)+Math.sin(cT*0.3+i)*W*0.05;
+    const gr=ctx2.createRadialGradient(ax,ay,0,ax,ay,aw);
+    const hue=[170,200,260][i];
+    gr.addColorStop(0,`hsla(${hue},80%,60%,0.12)`); gr.addColorStop(1,'transparent');
+    ctx2.fillStyle=gr; ctx2.beginPath(); ctx2.arc(ax,ay,aw,0,Math.PI*2); ctx2.fill();
+  }
+
+  // Ground / horizon mist
+  const mist=ctx2.createLinearGradient(0,H*0.75,0,H);
+  mist.addColorStop(0,'transparent'); mist.addColorStop(1,'rgba(10,20,60,0.8)');
+  ctx2.fillStyle=mist; ctx2.fillRect(0,H*0.75,W,H*0.25);
+}
+
+/* ---- SUN ---- */
+function drawSun(W,H) {
+  const sky=ctx2.createLinearGradient(0,0,0,H);
+  sky.addColorStop(0,'#87ceeb'); sky.addColorStop(0.5,'#b8e8f8'); sky.addColorStop(1,'#e8f8ff');
+  ctx2.fillStyle=sky; ctx2.fillRect(0,0,W,H);
+
+  // Sun
+  const sx=W*0.2, sy=H*0.15;
+  // Outer glow
+  const sg=ctx2.createRadialGradient(sx,sy,20,sx,sy,150);
+  sg.addColorStop(0,'rgba(255,220,50,0.35)'); sg.addColorStop(1,'transparent');
+  ctx2.fillStyle=sg; ctx2.beginPath(); ctx2.arc(sx,sy,150,0,Math.PI*2); ctx2.fill();
+  // Rays
+  ctx2.save(); ctx2.translate(sx,sy); ctx2.rotate(cT*0.1);
+  sunRays.forEach(r=>{
+    ctx2.save(); ctx2.rotate(r.angle);
+    const gr=ctx2.createLinearGradient(0,0,0,-W*0.25);
+    gr.addColorStop(0,'rgba(255,220,0,0.4)'); gr.addColorStop(1,'transparent');
+    ctx2.fillStyle=gr;
+    ctx2.fillRect(-2,30,4,W*0.22);
+    ctx2.restore();
+  });
+  ctx2.restore();
+  // Sun body
+  ctx2.fillStyle='#ffe020'; ctx2.shadowColor='#ffcc00'; ctx2.shadowBlur=30;
+  ctx2.beginPath(); ctx2.arc(sx,sy,45,0,Math.PI*2); ctx2.fill();
+  ctx2.fillStyle='#fff5a0';
+  ctx2.beginPath(); ctx2.arc(sx-8,sy-8,22,0,Math.PI*2); ctx2.fill();
+  ctx2.shadowBlur=0;
+
+  // Clouds
+  [[0.3,0.12,1],[0.6,0.08,0.85],[0.8,0.18,0.7]].forEach(([cx,cy,scale],i)=>{
+    const ox=Math.sin(cT*0.12+i)*W*0.015;
+    drawCloud(ctx2,(cx+ox/W)*W,cy*H,scale*90,scale);
+  });
+
+  // Sparkles / bubbles
+  bubbles.forEach(b=>{
+    b.phase+=b.spd*0.03;
+    b.y-=b.drift*0.003; b.x+=b.vx;
+    if(b.y<-0.1){b.y=1.1; b.x=Math.random();}
+    if(b.x<0)b.x=1; if(b.x>1)b.x=0;
+    const a=0.15+0.15*Math.abs(Math.sin(b.phase));
+    ctx2.save(); ctx2.globalAlpha=a;
+    ctx2.fillStyle='rgba(255,255,255,0.8)';
+    ctx2.beginPath(); ctx2.arc(b.x*W,b.y*H,b.r,0,Math.PI*2); ctx2.fill();
+    ctx2.restore();
+  });
+
+  // Sparkle stars
+  for(let i=0;i<12;i++){
+    const sx2=((i*137+Math.sin(cT*0.5+i)*30+400)%W);
+    const sy2=((i*97+Math.cos(cT*0.4+i)*20+200)%H);
+    const a=0.4+0.6*Math.abs(Math.sin(cT*1.5+i));
+    ctx2.save(); ctx2.globalAlpha=a;
+    ctx2.fillStyle='#fffaaa'; ctx2.shadowColor='#ffdd00'; ctx2.shadowBlur=8;
+    drawStar4(ctx2,sx2,sy2,5+Math.sin(cT+i)*2);
+    ctx2.restore();
+  }
+
+  // Ground
+  const gr=ctx2.createLinearGradient(0,H*0.75,0,H);
+  gr.addColorStop(0,'#90d05a'); gr.addColorStop(1,'#5aaa28');
+  ctx2.fillStyle=gr; ctx2.fillRect(0,H*0.8,W,H*0.2);
+  // Rolling hills
+  ctx2.fillStyle='rgba(120,200,70,0.5)';
+  ctx2.beginPath(); ctx2.moveTo(0,H);
+  for(let x=0;x<=W;x+=20){
+    ctx2.lineTo(x,H*0.8+Math.sin(x*0.007+cT*0.1)*H*0.04);
+  }
+  ctx2.lineTo(W,H); ctx2.fill();
+}
+
+function drawCloud(c,x,y,r,scale) {
+  c.save(); c.fillStyle='rgba(255,255,255,0.85)'; c.shadowBlur=20; c.shadowColor='rgba(200,230,255,0.5)';
+  [[0,0,1],[r*0.4,r*-0.2,0.75],[r*-0.4,r*-0.15,0.7],[r*0.7,r*0.05,0.65],[r*-0.7,r*0.05,0.6]].forEach(([dx,dy,sr])=>{
+    c.beginPath(); c.arc(x+dx,y+dy,r*sr*scale*0.45,0,Math.PI*2); c.fill();
+  });
+  c.restore();
+}
+
+function drawStar4(c,x,y,r) {
+  c.beginPath();
+  for(let a=0;a<Math.PI*2;a+=Math.PI/2){
+    const inner=r*0.3, outer=r;
+    c.lineTo(x+Math.cos(a)*outer,y+Math.sin(a)*outer);
+    c.lineTo(x+Math.cos(a+Math.PI/4)*inner,y+Math.sin(a+Math.PI/4)*inner);
+  }
+  c.closePath(); c.fill();
+}
+</script>
+</body>
+</html>

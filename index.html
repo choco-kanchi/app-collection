@@ -1,0 +1,827 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🪷 愚痴成仏システム</title>
+<link href="https://fonts.googleapis.com/css2?family=Zen+Old+Mincho:wght@400;700;900&family=Noto+Sans+JP:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+
+:root {
+  --washi:    #f4eed8;
+  --washi2:   #ece4c8;
+  --washi3:   #e0d4b0;
+  --shu:      #b02020;
+  --shu2:     #d03030;
+  --shu3:     #e85050;
+  --shu-dim:  rgba(176,32,32,0.1);
+  --sumi:     #1a1208;
+  --sumi2:    #3a2c18;
+  --sumi3:    #6a5a3a;
+  --gold:     #b8882a;
+  --gold2:    #d4a840;
+  --gold-dim: rgba(184,136,42,0.15);
+  --border:   rgba(176,32,32,0.2);
+  --border2:  rgba(176,32,32,0.35);
+  --shadow:   0 8px 40px rgba(26,18,8,0.18);
+}
+
+body {
+  background: var(--washi3);
+  background-image:
+    repeating-linear-gradient(0deg, transparent, transparent 28px, rgba(26,18,8,0.03) 28px, rgba(26,18,8,0.03) 29px),
+    repeating-linear-gradient(90deg, transparent, transparent 28px, rgba(26,18,8,0.02) 28px, rgba(26,18,8,0.02) 29px),
+    radial-gradient(ellipse at 20% 10%, rgba(184,136,42,0.1) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 90%, rgba(176,32,32,0.06) 0%, transparent 50%);
+  color: var(--sumi);
+  font-family: "Noto Sans JP", sans-serif;
+  min-height: 100vh;
+  padding: clamp(16px,4vw,48px) clamp(12px,3vw,24px) 80px;
+}
+
+/* 和紙グレイン */
+body::before {
+  content:""; position:fixed; inset:0; pointer-events:none; z-index:0; opacity:0.04;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 300 300' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+.wrapper { position:relative; z-index:1; max-width:740px; margin:0 auto; }
+
+/* =============================================
+   HEADER — 御祈祷書風
+   ============================================= */
+.site-header {
+  text-align: center;
+  margin-bottom: clamp(24px,5vh,48px);
+  animation: fadeDown 0.7s ease both;
+}
+@keyframes fadeDown {
+  from { opacity:0; transform:translateY(-18px); }
+  to   { opacity:1; transform:translateY(0); }
+}
+
+/* 鳥居モチーフ */
+.torii {
+  display: flex; flex-direction: column; align-items: center;
+  margin-bottom: 16px;
+}
+.torii-top {
+  width: clamp(160px,40vw,220px); height: 6px;
+  background: var(--shu);
+  border-radius: 2px;
+  position: relative;
+  box-shadow: 0 2px 8px rgba(176,32,32,0.3);
+}
+.torii-top::before, .torii-top::after {
+  content:"";
+  position:absolute; top:-10px;
+  width: 100%; height: 4px;
+  background: var(--shu);
+  border-radius: 2px;
+  left:0;
+}
+.torii-pillars {
+  display: flex; gap: clamp(80px,20vw,130px);
+  margin-top: 0;
+}
+.torii-pillar {
+  width: 6px; height: clamp(30px,6vh,44px);
+  background: var(--shu);
+  border-radius: 0 0 3px 3px;
+  box-shadow: 0 2px 8px rgba(176,32,32,0.2);
+}
+
+.header-eyebrow {
+  font-family: "DM Mono", monospace; font-size: 10px;
+  letter-spacing: 5px; color: var(--shu); margin-bottom: 10px;
+  text-transform: uppercase;
+}
+
+.site-logo {
+  font-family: "Zen Old Mincho", serif;
+  font-size: clamp(28px,7vw,52px);
+  font-weight: 900;
+  color: var(--sumi);
+  letter-spacing: 4px;
+  line-height: 1.1;
+  text-shadow: 2px 2px 0 rgba(176,32,32,0.15);
+}
+.site-logo .shu { color: var(--shu); }
+
+.site-sub {
+  font-size: clamp(11px,1.8vw,13px);
+  color: var(--sumi3); margin-top: 8px;
+  font-family: "DM Mono", monospace; letter-spacing: 3px;
+}
+
+.header-rule {
+  display: flex; align-items: center; gap: 12px;
+  margin: 14px auto 0; width: fit-content; color: var(--shu);
+  font-size: 14px;
+}
+.header-rule::before, .header-rule::after {
+  content:""; width: clamp(40px,8vw,100px); height: 1px;
+  background: linear-gradient(90deg, transparent, var(--shu), transparent);
+}
+
+/* =============================================
+   CARD — 御札・巻物風
+   ============================================= */
+.card {
+  background: var(--washi);
+  border: 2px solid var(--shu);
+  border-radius: 4px;
+  box-shadow: var(--shadow), inset 0 0 0 6px var(--washi), inset 0 0 0 8px rgba(176,32,32,0.15);
+  overflow: hidden;
+  animation: fadeDown 0.7s 0.15s ease both;
+  position: relative;
+}
+
+/* 上下の朱帯 */
+.card::before, .card::after {
+  content:"";
+  display: block; height: 8px;
+  background: repeating-linear-gradient(90deg, var(--shu) 0px, var(--shu) 12px, var(--shu2) 12px, var(--shu2) 24px);
+}
+
+.page { display:none; padding: clamp(22px,4vw,44px); }
+.page.active { display:block; }
+
+/* =============================================
+   SECTION LABELS
+   ============================================= */
+.section-label {
+  font-family: "Zen Old Mincho", serif; font-size: 11px;
+  letter-spacing: 4px; color: var(--shu);
+  margin-bottom: 12px;
+  display: flex; align-items: center; gap: 10px;
+}
+.section-label::before { content:"◆"; font-size: 8px; }
+.section-label::after  { content:""; flex:1; height:1px; background: var(--border); }
+.section-group { margin-bottom: clamp(20px,3.5vh,32px); }
+
+/* =============================================
+   MODE CARDS（5モード）
+   ============================================= */
+.mode-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(clamp(110px,20vw,150px),1fr));
+  gap: 8px;
+}
+
+.mode-card { position: relative; }
+.mode-card input[type="radio"] { position:absolute; opacity:0; width:0; height:0; }
+.mode-card label {
+  display: flex; flex-direction: column; align-items: center;
+  gap: 8px; padding: 16px 8px;
+  background: var(--washi2);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  cursor: pointer; transition: all 0.2s;
+  text-align: center; user-select: none;
+  position: relative; overflow: hidden;
+}
+.mode-card label::before {
+  content:"";
+  position:absolute; top:0; left:0; right:0; height:2px;
+  background: var(--shu); opacity:0; transition: opacity 0.2s;
+}
+.mode-card label:hover { border-color: var(--border2); background: var(--washi); }
+.mode-card label:hover::before { opacity: 0.5; }
+.mode-card input:checked + label {
+  background: var(--shu-dim);
+  border-color: var(--shu);
+  box-shadow: 0 0 0 1px var(--shu), 0 3px 12px rgba(176,32,32,0.15);
+}
+.mode-card input:checked + label::before { opacity: 1; }
+
+.mode-emoji { font-size: 28px; }
+.mode-name {
+  font-family: "Zen Old Mincho", serif; font-size: clamp(12px,2vw,14px);
+  color: var(--sumi); letter-spacing: 1px; font-weight: 700;
+}
+.mode-sub {
+  font-size: 10px; color: var(--sumi3);
+  font-family: "DM Mono", monospace;
+  line-height: 1.4;
+}
+.mode-card input:checked + label .mode-name { color: var(--shu); }
+
+/* =============================================
+   FORM FIELDS
+   ============================================= */
+.field { display:flex; flex-direction:column; gap:6px; margin-bottom:12px; }
+.field:last-child { margin-bottom:0; }
+
+label.field-label {
+  font-family: "Zen Old Mincho", serif; font-size: 12px;
+  letter-spacing: 3px; color: var(--sumi2);
+}
+
+textarea, input[type="text"] {
+  width: 100%; padding: 12px 14px;
+  background: var(--washi2);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  color: var(--sumi);
+  font-family: "Noto Sans JP", sans-serif;
+  font-size: clamp(13px,2vw,14px);
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  line-height: 1.85;
+}
+textarea { resize: vertical; min-height: clamp(130px,20vh,200px); }
+textarea:focus, input:focus {
+  border-color: var(--shu);
+  box-shadow: 0 0 0 3px rgba(176,32,32,0.08);
+  background: #fffef8;
+}
+textarea::placeholder, input::placeholder { color: var(--sumi3); opacity:0.6; }
+
+.char-count {
+  font-size: 10px; font-family: "DM Mono", monospace;
+  color: var(--sumi3); text-align: right;
+}
+
+/* 愚痴ヒント */
+.guchi-hint {
+  display: flex; gap: 10px;
+  padding: 12px 14px;
+  background: var(--shu-dim);
+  border-left: 3px solid var(--shu);
+  border-radius: 0 3px 3px 0;
+  font-size: 12px; color: var(--sumi2); line-height: 1.7;
+  margin-top: 6px;
+}
+.guchi-hint .icon { font-size: 14px; flex-shrink:0; }
+
+/* =============================================
+   BUTTONS
+   ============================================= */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 12px 26px; border-radius: 3px;
+  font-family: "Zen Old Mincho", serif;
+  font-size: clamp(13px,2.5vw,15px); letter-spacing: 2px;
+  cursor: pointer; border: 1px solid transparent;
+  transition: all 0.2s; white-space: nowrap;
+}
+.btn-shu {
+  background: var(--shu); color: var(--washi);
+  border-color: #7a1010;
+  box-shadow: 0 2px 0 #7a1010, 0 4px 16px rgba(176,32,32,0.25);
+  font-weight: 700;
+}
+.btn-shu:hover {
+  background: var(--shu2); transform: translateY(-1px);
+  box-shadow: 0 3px 0 #7a1010, 0 6px 20px rgba(176,32,32,0.3);
+}
+.btn-shu:active { transform: translateY(1px); box-shadow: none; }
+
+.btn-copy {
+  background: var(--sumi); color: var(--washi);
+  border-color: rgba(0,0,0,0.4);
+  box-shadow: 0 2px 0 rgba(0,0,0,0.35), 0 4px 16px rgba(0,0,0,0.15);
+  font-size: clamp(13px,2.5vw,16px); padding: 14px 32px;
+  font-family: "Zen Old Mincho", serif; letter-spacing: 2px;
+}
+.btn-copy:hover {
+  background: var(--sumi2); transform: translateY(-1px);
+  box-shadow: 0 3px 0 rgba(0,0,0,0.35), 0 6px 20px rgba(0,0,0,0.2);
+}
+.btn-copy.copied { background: var(--shu); border-color: #7a1010; box-shadow: 0 2px 0 #7a1010; }
+
+.btn-ghost {
+  background: transparent; color: var(--sumi3); border-color: var(--border);
+  font-size: 12px; padding: 8px 18px;
+  font-family: "DM Mono", monospace; letter-spacing: 1px;
+}
+.btn-ghost:hover { border-color: var(--border2); color: var(--sumi2); background: var(--washi2); }
+
+.action-bar {
+  display: flex; gap: 10px; justify-content: flex-end;
+  flex-wrap: wrap; margin-top: clamp(18px,3vh,28px);
+}
+
+/* =============================================
+   PAGE 2 — OUTPUT
+   ============================================= */
+/* 御札ヘッダー */
+.ofuda-header {
+  display: flex; justify-content: space-between; align-items: center;
+  flex-wrap: wrap; gap: 12px;
+  padding: 16px 20px;
+  background: var(--shu-dim);
+  border: 1px solid var(--border2);
+  border-radius: 3px;
+  margin-bottom: 20px;
+  position: relative;
+}
+.ofuda-header::before {
+  content:"";
+  position:absolute; left:0; top:0; bottom:0; width:4px;
+  background: var(--shu); border-radius: 3px 0 0 3px;
+}
+.ofuda-mode-title {
+  font-family: "Zen Old Mincho", serif;
+  font-size: clamp(18px,3.5vw,24px); font-weight: 900;
+  color: var(--sumi); letter-spacing: 2px;
+}
+.ofuda-seal {
+  font-family: "Zen Old Mincho", serif; font-size: 11px;
+  color: var(--shu); border: 2px solid var(--shu);
+  border-radius: 50%; width: 46px; height: 46px;
+  display: flex; align-items: center; justify-content: center;
+  letter-spacing: 0; font-weight: 700;
+  opacity: 0.8; transform: rotate(-8deg);
+  flex-shrink: 0;
+}
+
+.how-to {
+  display: flex; gap: 10px;
+  padding: 12px 16px;
+  background: var(--gold-dim);
+  border-left: 3px solid var(--gold);
+  border-radius: 0 3px 3px 0;
+  margin-bottom: 20px;
+  font-size: 13px; color: var(--sumi2); line-height: 1.7;
+}
+.how-to .icon { font-size: 16px; flex-shrink:0; }
+
+/* プロンプト表示 */
+.prompt-out {
+  width: 100%;
+  min-height: clamp(260px,40vh,380px);
+  padding: 20px;
+  background: var(--washi2);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  color: var(--sumi);
+  font-family: "Noto Sans JP", sans-serif;
+  font-size: clamp(13px,2vw,14px);
+  line-height: 1.95;
+  white-space: pre-wrap; word-break: break-word;
+  resize: none; outline: none;
+  transition: border-color 0.2s;
+  /* 縦罫線 */
+  background-image: linear-gradient(rgba(176,32,32,0.06) 1px, transparent 1px);
+  background-size: 100% 1.95em;
+  background-attachment: local;
+}
+.prompt-out:focus { border-color: var(--shu); }
+
+.copy-row {
+  display: flex; justify-content: space-between; align-items: center;
+  flex-wrap: wrap; gap: 12px; margin-top: 16px;
+}
+.copy-hint {
+  font-size: 11px; font-family: "DM Mono", monospace;
+  color: var(--sumi3); line-height: 1.7;
+}
+
+/* =============================================
+   CHEER — ねぎらい
+   ============================================= */
+.cheer-box {
+  margin-top: 24px;
+  padding: 20px 24px;
+  background: linear-gradient(135deg, rgba(176,32,32,0.06), rgba(184,136,42,0.08));
+  border: 1px solid rgba(176,32,32,0.2);
+  border-radius: 3px;
+  text-align: center;
+  animation: cheerPop 0.5s cubic-bezier(0.34,1.56,0.64,1) both;
+  position: relative;
+}
+.cheer-box::before, .cheer-box::after {
+  content:"◆";
+  position:absolute; top:50%; transform:translateY(-50%);
+  color: rgba(176,32,32,0.25); font-size: 12px;
+}
+.cheer-box::before { left: 12px; }
+.cheer-box::after  { right: 12px; }
+
+@keyframes cheerPop {
+  from { transform: scale(0.93); opacity:0; }
+  to   { transform: scale(1);    opacity:1; }
+}
+.cheer-emoji { font-size: 32px; margin-bottom: 10px; display: block; }
+.cheer-text {
+  font-family: "Zen Old Mincho", serif;
+  font-size: clamp(14px,2.8vw,18px); font-weight: 700;
+  color: var(--sumi); line-height: 1.7; letter-spacing: 1px;
+}
+.cheer-sub {
+  font-size: 11px; color: var(--sumi3);
+  font-family: "DM Mono", monospace; margin-top: 6px;
+  letter-spacing: 1px;
+}
+
+/* =============================================
+   TOAST
+   ============================================= */
+.toast {
+  position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+  background: var(--sumi); color: var(--washi);
+  padding: 10px 24px; border-radius: 30px;
+  font-size: 12px; font-family: "DM Mono", monospace;
+  opacity: 0; pointer-events: none; transition: opacity 0.3s;
+  z-index: 999; white-space: nowrap; letter-spacing: 1px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+}
+.toast.show { opacity: 1; }
+
+/* =============================================
+   STEP TABS
+   ============================================= */
+.step-tabs {
+  display: flex; gap: 0;
+  margin-bottom: -2px; position: relative; z-index: 2;
+}
+.step-tab {
+  flex:1; padding: 10px 10px 14px;
+  background: var(--washi3); border: 1px solid var(--border);
+  border-bottom: none;
+  font-family: "Zen Old Mincho", serif; font-size: clamp(11px,2vw,13px);
+  color: var(--sumi3); cursor: pointer; text-align: center;
+  letter-spacing: 2px; transition: all 0.2s;
+}
+.step-tab:first-child { border-radius: 4px 0 0 0; }
+.step-tab:last-child  { border-radius: 0 4px 0 0; }
+.step-tab.active {
+  background: var(--washi); color: var(--shu); font-weight: 700;
+  border-color: var(--border2);
+}
+.step-tab .tab-num {
+  display:inline-block; width:18px; height:18px; line-height:18px;
+  border-radius:50%; background:var(--sumi3); color:var(--washi);
+  font-size:9px; margin-right:6px; transition:background 0.2s;
+  font-family:"DM Mono",monospace;
+}
+.step-tab.active .tab-num { background: var(--shu); }
+
+/* =============================================
+   FOOTER
+   ============================================= */
+.site-footer {
+  text-align: center; margin-top: 40px;
+  font-size: 10px; font-family: "DM Mono", monospace;
+  color: var(--sumi3); letter-spacing: 3px;
+}
+
+@media (max-width: 480px) {
+  .action-bar { justify-content: stretch; }
+  .action-bar .btn { flex: 1; }
+  .copy-row { flex-direction: column; align-items: stretch; }
+  .btn-copy { text-align: center; }
+}
+</style>
+</head>
+<body>
+<div class="wrapper">
+
+  <!-- HEADER -->
+  <header class="site-header">
+    <div class="torii">
+      <div class="torii-top"></div>
+      <div class="torii-pillars">
+        <div class="torii-pillar"></div>
+        <div class="torii-pillar"></div>
+      </div>
+    </div>
+    <div class="header-eyebrow">Guchi · Joubutsu · System</div>
+    <div class="site-logo">🪷 愚痴<span class="shu">成仏</span>システム</div>
+    <div class="site-sub">愚痴を、社会人語に昇華させる</div>
+    <div class="header-rule">✦</div>
+  </header>
+
+  <!-- STEP TABS -->
+  <div class="step-tabs">
+    <button class="step-tab active" id="tab0" onclick="goPage(0)">
+      <span class="tab-num">壱</span>愚痴を奉納する
+    </button>
+    <button class="step-tab" id="tab1" onclick="goPage(1)">
+      <span class="tab-num">弐</span>成仏させる
+    </button>
+  </div>
+
+  <div class="card">
+
+    <!-- ====== PAGE 1: 入力 ====== -->
+    <div class="page active" id="page0">
+
+      <!-- モード選択 -->
+      <div class="section-group">
+        <div class="section-label">成仏モードを選べ</div>
+        <div class="mode-grid" id="modeGrid"></div>
+      </div>
+
+      <!-- 愚痴入力 -->
+      <div class="section-group">
+        <div class="section-label">愚痴を奉納せよ</div>
+        <div class="field">
+          <label class="field-label">📝 思いのたけをぶちまけよ（何でもOK）</label>
+          <textarea id="guchiInput" placeholder="例：
+・あいつまじでなんなの
+・毎回会議で的外れなこと言って空気読めてない
+・上司に言われたこと意味わからんすぎる
+・メールの返信3日待たせるのやめてほしい
+・もうほんとにいい加減にしてほしい"></textarea>
+          <div class="char-count" id="charCount">0 文字</div>
+          <div class="guchi-hint">
+            <span class="icon">🪷</span>
+            <span>タメ口・汚い言葉・感情のまま、なんでも書いていい。<br>ここに書いた愚痴は、選んだモードで社会人語に成仏させます。</span>
+          </div>
+        </div>
+        <div class="field">
+          <label class="field-label">🎯 状況（任意）</label>
+          <input type="text" id="situation" placeholder="例：職場の同僚に / 上司への返信 / チャットで一言">
+        </div>
+      </div>
+
+      <div class="action-bar">
+        <button class="btn btn-ghost" onclick="clearAll()">🗑 リセット</button>
+        <button class="btn btn-shu" onclick="goGenerate()">
+          🪷 成仏させる →
+        </button>
+      </div>
+    </div>
+
+    <!-- ====== PAGE 2: 出力 ====== -->
+    <div class="page" id="page1">
+
+      <div class="ofuda-header" id="ofudaHeader">
+        <div>
+          <div style="font-size:10px;letter-spacing:3px;color:var(--sumi3);font-family:'DM Mono',monospace;margin-bottom:4px;">成仏モード</div>
+          <div class="ofuda-mode-title" id="ofudaTitle">🕊 鳩のように穏やかに</div>
+        </div>
+        <div class="ofuda-seal" id="ofudaSeal">成仏</div>
+      </div>
+
+      <div class="how-to">
+        <span class="icon">💡</span>
+        <div>
+          下のプロンプトをまるごとコピーして、<strong>Claude・ChatGPT・Gemini</strong> などに貼り付けるだけ！<br>
+          愚痴が完璧な社会人語に成仏して帰ってきます 🪷
+        </div>
+      </div>
+
+      <div class="section-label">成仏プロンプト</div>
+      <textarea class="prompt-out" id="promptOut" readonly></textarea>
+
+      <div class="copy-row">
+        <div class="copy-hint">
+          ① コピーボタンを押す<br>
+          ② AIに貼り付けて送信<br>
+          ③ 愚痴が社会人語に変換されます 🪷
+        </div>
+        <button class="btn btn-copy" id="copyBtn" onclick="copyPrompt()">
+          📋 成仏させてコピーする
+        </button>
+      </div>
+
+      <!-- ねぎらい -->
+      <div class="cheer-box" id="cheerBox">
+        <span class="cheer-emoji" id="cheerEmoji">🪷</span>
+        <div class="cheer-text" id="cheerText">愚痴を吐き出せたあなた、えらい。</div>
+        <div class="cheer-sub" id="cheerSub">感情を持つことは、人間の証拠です。</div>
+      </div>
+
+      <div class="action-bar" style="margin-top:22px;padding-top:18px;border-top:1px solid var(--border);">
+        <button class="btn btn-ghost" onclick="goPage(0)">← 愚痴を書き直す</button>
+        <button class="btn btn-ghost" onclick="downloadTxt()">💾 テキスト保存</button>
+      </div>
+    </div>
+
+  </div><!-- /card -->
+
+  <div class="site-footer">✦ 愚痴成仏システム ✦ あなたの感情は正しい ✦</div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* =============================================
+   DATA
+   ============================================= */
+const MODES = [
+  {
+    id: 'hato', emoji: '🕊', name: '鳩のように\n穏やかに', sub: '普通のビジネス敬語',
+    seal: '穏',
+    instruction: '丁寧で穏やかなビジネス敬語に変換してください。一般的なビジネスメール・チャットで使える標準的な丁寧語で。感情を排し、落ち着いたトーンで。',
+    btnLabel: '🕊 穏やかに成仏させてコピー',
+  },
+  {
+    id: 'hotoke', emoji: '🪷', name: '仏のように\n慈悲深く', sub: '全てを受け入れる悟り系',
+    seal: '仏',
+    instruction: '仏のような慈悲と悟りを持った表現に変換してください。相手の言動も全て受け入れ、包み込むような言葉で。「おかげさまで」「ありがたく」など感謝ベースの表現を使い、怒りの欠片も感じさせない完全な穏やかさで。',
+    btnLabel: '🪷 仏の境地で成仏させてコピー',
+  },
+  {
+    id: 'koori', emoji: '🧊', name: '氷のように\nクールに', sub: '感情ゼロの事務的返答',
+    seal: '冷',
+    instruction: '感情を一切排除した、完全に事務的・ビジネスライクな表現に変換してください。余計な修飾語なし、必要最低限の言葉のみ。冷静で簡潔、でも礼を失しない。読んだ相手が「怒ってる？」と少し不安になるくらいの温度感で。',
+    btnLabel: '🧊 氷のように成仏させてコピー',
+  },
+  {
+    id: 'ousha', emoji: '👑', name: '王者のように\n泰然と', sub: '読んだ相手が少し萎縮する貫禄',
+    seal: '王',
+    instruction: '全てを高みから見下ろす、威厳ある王者の言葉に変換してください。怒りや不満は「そなたの未熟さゆえ、致し方なし」くらいの余裕で受け流し、相手を少し萎縮させるような風格を持たせてください。ビジネス敬語の範囲内で、でも読んだ相手が「この人…格が違う…」と感じるくらいの威圧感と貫禄を。間違っても媚びない、謝りすぎない、でも失礼でもない。完全に上位の存在からの言葉として。',
+    btnLabel: '👑 王者の貫禄で成仏させてコピー',
+  },
+  {
+    id: 'tenshi', emoji: '😇', name: '天使のように\n純粋に', sub: 'ポジティブ変換全開',
+    seal: '光',
+    instruction: '全てをポジティブに解釈した天使のような表現に変換してください。どんな理不尽も「学びの機会」「成長のチャンス」として捉え、相手の言動も全て善意から来ていると解釈して。読んだ人が「この人は何かに目覚めたのか」と思うくらいの純粋さで。',
+    btnLabel: '😇 天使の純粋さで成仏させてコピー',
+  },
+];
+
+const CHEERS = {
+  hato: [
+    { emoji:'🕊', text:'今日もよく耐えました。', sub:'穏やかな明日が来ますように。' },
+    { emoji:'🌿', text:'その気持ち、ちゃんと受け取りました。', sub:'ゆっくり深呼吸してください。' },
+    { emoji:'☕', text:'愚痴を言葉にできた、それだけで十分です。', sub:'一杯のお茶で一息ついてください。' },
+    { emoji:'🌸', text:'感情を持つことは、弱さじゃない。', sub:'今日もよく頑張りました。' },
+  ],
+  hotoke: [
+    { emoji:'🪷', text:'その怒りも、あなたの一部。全てを慈しみなさい。', sub:'苦しみは、悟りへの道しるべです。' },
+    { emoji:'🙏', text:'相手もまた、迷える衆生。', sub:'憎しみを手放した時、あなたは自由になります。' },
+    { emoji:'🌕', text:'怒りは雲のようなもの。', sub:'月はいつも、その向こうで輝いています。' },
+    { emoji:'🪔', text:'全ては縁起。この愚痴も、あなたの成長の糧。', sub:'南無。' },
+  ],
+  koori: [
+    { emoji:'🧊', text:'処理完了。次の案件へ。', sub:'感情は一時保存されました。' },
+    { emoji:'📋', text:'愚痴の変換が終了しました。', sub:'引き続き業務を遂行してください。' },
+    { emoji:'🖥', text:'エラーを検知しました。社会人語に変換し、正常化しました。', sub:'再起動は不要です。' },
+    { emoji:'⏱', text:'完了。所要時間は問題ありません。', sub:'次のタスクに移行してください。' },
+  ],
+  ousha: [
+    { emoji:'👑', text:'よくぞ余のもとへ参った。', sub:'その愚痴、見事に成仏させてやろう。' },
+    { emoji:'🦁', text:'余は全てを知っておる。', sub:'そなたの怒りは、正当である。認めよう。' },
+    { emoji:'⚔️', text:'苦労をかけたな、家臣よ。', sub:'そなたあってこそ、この城は保たれておる。' },
+    { emoji:'🏰', text:'その程度の輩、余が相手にするまでもない。', sub:'そなたは余の隣に立つにふさわしい。' },
+  ],
+  tenshi: [
+    { emoji:'😇', text:'あなたは今日も本当によく頑張りました！！', sub:'絶対うまくいきます！！全部うまくいく！！🌈' },
+    { emoji:'🌟', text:'その愚痴の中に、あなたの優しさが見えます！', sub:'怒れるということは、それだけ真剣だということです！' },
+    { emoji:'🦋', text:'大丈夫！！世界はあなたの味方です！！', sub:'今日の愚痴は、明日の笑い話になります！きっと！！' },
+    { emoji:'🌈', text:'神様はいつも見守っています！！！', sub:'今日も生きてくれてありがとう！！！🌸🌸🌸' },
+  ],
+};
+
+let selectedMode = 'hato';
+
+/* =============================================
+   BUILD MODES
+   ============================================= */
+function buildModes() {
+  const grid = document.getElementById('modeGrid');
+  MODES.forEach((m, i) => {
+    const wrap = document.createElement('div'); wrap.className = 'mode-card';
+    wrap.innerHTML = `
+      <input type="radio" name="mode" id="mode_${m.id}" value="${m.id}" ${i===0?'checked':''}>
+      <label for="mode_${m.id}">
+        <span class="mode-emoji">${m.emoji}</span>
+        <span class="mode-name">${m.name}</span>
+        <span class="mode-sub">${m.sub}</span>
+      </label>`;
+    wrap.querySelector('input').addEventListener('change', () => { selectedMode = m.id; });
+    grid.appendChild(wrap);
+  });
+}
+
+/* =============================================
+   CHAR COUNT
+   ============================================= */
+document.addEventListener('DOMContentLoaded', () => {
+  buildModes();
+  document.getElementById('guchiInput').addEventListener('input', function() {
+    document.getElementById('charCount').textContent = this.value.length + ' 文字';
+  });
+});
+
+/* =============================================
+   PAGE NAV
+   ============================================= */
+function goPage(n) {
+  document.querySelectorAll('.page').forEach((p,i) => p.classList.toggle('active', i===n));
+  document.querySelectorAll('.step-tab').forEach((t,i) => t.classList.toggle('active', i===n));
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function goGenerate() {
+  const guchi = document.getElementById('guchiInput').value.trim();
+  if (!guchi) { showToast('📝 まず愚痴を奉納してください'); return; }
+  buildPrompt();
+  goPage(1);
+}
+
+/* =============================================
+   PROMPT BUILDER
+   ============================================= */
+function buildPrompt() {
+  const guchi  = document.getElementById('guchiInput').value.trim();
+  const sit    = document.getElementById('situation').value.trim();
+  const mode   = MODES.find(m => m.id === selectedMode) || MODES[0];
+
+  // Update header
+  document.getElementById('ofudaTitle').textContent = `${mode.emoji} ${mode.name.replace('\n', ' ')}`;
+  document.getElementById('ofudaSeal').textContent  = mode.seal;
+  document.getElementById('copyBtn').textContent    = `📋 ${mode.btnLabel}`;
+  document.getElementById('copyBtn').className      = 'btn btn-copy';
+
+  // Build prompt
+  const lines = [];
+  lines.push('以下の愚痴・本音を、ビジネスシーンで使える丁寧な言葉に変換してください。');
+  lines.push('');
+  lines.push('━━━━━━━━━━━━━━━━━━━━━━━━━━');
+  lines.push(`🪷 成仏モード：${mode.name.replace('\n', '')}（${mode.sub}）`);
+  lines.push('━━━━━━━━━━━━━━━━━━━━━━━━━━');
+  lines.push('');
+  lines.push('【変換の指示】');
+  lines.push(mode.instruction);
+  lines.push('');
+  lines.push('【出力の形式】');
+  lines.push('・変換後の文章のみを出力してください（説明・前置き不要）');
+  lines.push('・メール本文またはチャットメッセージとして、そのまま使える形で');
+  lines.push('・愚痴の元の感情は完全に隠蔽してください');
+  lines.push('・自然な長さで。長すぎず、短すぎず');
+  lines.push('');
+  lines.push('━━━━━━━━━━━━━━━━━━━━━━━━━━');
+  lines.push('📝 変換する愚痴・本音');
+  lines.push('━━━━━━━━━━━━━━━━━━━━━━━━━━');
+  lines.push('');
+  if (sit) lines.push(`【状況】${sit}`);
+  lines.push('');
+  lines.push('【愚痴・本音（そのまま書いたもの）】');
+  lines.push(guchi);
+
+  document.getElementById('promptOut').value = lines.join('\n');
+
+  // Cheer（モードごと）
+  const modeChecers = CHEERS[mode.id] || CHEERS['hato'];
+  const cheer = modeChecers[Math.floor(Math.random() * modeChecers.length)];
+  document.getElementById('cheerEmoji').textContent = cheer.emoji;
+  document.getElementById('cheerText').textContent  = cheer.text;
+  document.getElementById('cheerSub').textContent   = cheer.sub;
+}
+
+/* =============================================
+   COPY
+   ============================================= */
+function copyPrompt() {
+  const text = document.getElementById('promptOut').value;
+  const btn  = document.getElementById('copyBtn');
+  const orig = btn.textContent;
+  const copy = () => {
+    btn.textContent = '✅ 成仏しました！';
+    btn.classList.add('copied');
+    showToast('✅ コピー完了！AIに貼り付けて成仏させましょう 🪷');
+    setTimeout(() => { btn.textContent = orig; btn.classList.remove('copied'); }, 2500);
+  };
+  if (navigator.clipboard && window.isSecureContext) {
+    navigator.clipboard.writeText(text).then(copy);
+  } else {
+    const ta = document.getElementById('promptOut');
+    ta.select(); ta.setSelectionRange(0,99999);
+    document.execCommand('copy'); copy();
+  }
+}
+
+/* =============================================
+   DOWNLOAD
+   ============================================= */
+function downloadTxt() {
+  const mode = MODES.find(m => m.id === selectedMode) || MODES[0];
+  const blob = new Blob([document.getElementById('promptOut').value], {type:'text/plain;charset=utf-8'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `成仏プロンプト_${mode.name.replace('\n','')}.txt`;
+  a.click(); URL.revokeObjectURL(a.href);
+  showToast('💾 テキストファイルを保存しました');
+}
+
+/* =============================================
+   RESET
+   ============================================= */
+function clearAll() {
+  if (!confirm('入力内容をリセットしますか？')) return;
+  document.getElementById('guchiInput').value = '';
+  document.getElementById('situation').value  = '';
+  document.getElementById('charCount').textContent = '0 文字';
+  showToast('🗑 リセットしました（愚痴は成仏しました）');
+}
+
+/* =============================================
+   TOAST
+   ============================================= */
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2800);
+}
+</script>
+</body>
+</html>
